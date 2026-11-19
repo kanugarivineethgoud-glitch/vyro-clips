@@ -1497,3 +1497,389 @@ def download_clip(filename: str):
         media_type="video/mp4",
         filename=filename
     )
+
+
+
+
+
+# ==========================================
+# VYRO LIVEPULSE 3.3 — LIVE CHAT INTELLIGENCE
+# Append this entire block to the bottom of main.py
+# ==========================================
+
+class YouTubeLiveChatRequest(BaseModel):
+    url: str
+    page_token: str = None
+
+
+def youtube_api_get(endpoint, params):
+    """Make a private server-side YouTube API request."""
+
+    if not YOUTUBE_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="YouTube API key is not configured on the server."
+        )
+
+    params = dict(params)
+    params["key"] = YOUTUBE_API_KEY
+
+    api_url = (
+        "https://www.googleapis.com/youtube/v3/"
+        + endpoint
+        + "?"
+        + urlencode(params)
+    )
+
+    request = Request(
+        api_url,
+        headers={"User-Agent": "VYRO-CLIPS/3.3"}
+    )
+
+    try:
+        with urlopen(request, timeout=15) as response:
+            return json.loads(
+                response.read(2 * 1024 * 1024).decode("utf-8")
+            )
+
+    except HTTPError as error:
+        try:
+            body = json.loads(
+                error.read(256 * 1024).decode("utf-8")
+            )
+            api_error = body.get("error", {})
+            reason = (
+                api_error.get("errors", [{}])[0].get("reason", "")
+            )
+        except Exception:
+            reason = ""
+
+        logger.warning(
+            "YouTube API request failed: HTTP %s, reason=%s",
+            error.code,
+            reason
+        )
+
+        if reason == "quotaExceeded":
+            raise HTTPException(
+                status_code=429,
+                detail="YouTube API quota has been reached. Try again after the quota resets."
+            )
+
+        if reason in {
+            "liveChatDisabled",
+            "liveChatEnded",
+            "liveChatNotFound"
+        }:
+            raise HTTPException(
+                status_code=409,
+                detail="This live chat is disabled, has ended, or is unavailable."
+            )
+
+        if error.code == 403:
+            raise HTTPException(
+                status_code=403,
+                detail="YouTube denied access to this chat. The stream may not permit API access."
+            )
+
+        if error.code == 404:
+            raise HTTPException(
+                status_code=404,
+                detail="The requested YouTube live-chat resource was not found."
+            )
+
+        raise HTTPException(
+            status_code=502,
+            detail="YouTube returned an API error. Please try again later."
+        )
+
+    except (URLError, TimeoutError):
+        raise HTTPException(
+            status_code=502,
+            detail="Could not connect to YouTube. Please try again."
+        )
+
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(
+            status_code=502,
+            detail="YouTube returned an invalid response."
+        )
+
+
+def analyse_live_chat_messages(items, actual_start_time=None):
+    """Analyse messages without storing author identities."""
+
+    from collections import Counter
+    from datetime import datetime
+
+    stop_words = {
+        "the", "and", "for", "you", "are", "this", "that",
+        "with", "have", "what", "when", "where", "why",
+        "how", "who", "was", "were", "will", "would",
+        "can", "could", "should", "just", "not", "but",
+        "all", "they", "them", "his", "her", "she", "him",
+        "its", "our", "your", "from", "there", "here",
+        "about", "then", "than", "too", "very", "lol",
+        "bro", "guys", "yeah", "yes", "no", "ok", "okay",
+        "omg", "www", "http", "https"
+    }
+
+    messages = []
+    topics = Counter()
+    buckets = {}
+
+    question_count = 0
+    reaction_count = 0
+
+    start_dt = None
+
+    if actual_start_time:
+        try:
+            start_dt = datetime.fromisoformat(
+                actual_start_time.replace("Z", "+00:00")
+            )
+        except (ValueError, TypeError):
+            start_dt = None
+
+    for item in items:
+        snippet = item.get("snippet", {})
+
+        message_text = (
+            snippet.get("displayMessage")
+            or snippet.get("textMessageDetails", {}).get("messageText")
+            or ""
+        )
+
+        message_text = re.sub(
+            r"\s+",
+            " ",
+            str(message_text)
+        ).strip()
+
+        if not message_text:
+            continue
+
+        message_text = message_text[:500]
+
+        published_at = snippet.get("publishedAt")
+        relative_seconds = None
+
+        if published_at and start_dt:
+            try:
+                published_dt = datetime.fromisoformat(
+                    published_at.replace("Z", "+00:00")
+                )
+
+                relative_seconds = max(
+                    0,
+                    int((published_dt - start_dt).total_seconds())
+                )
+            except (ValueError, TypeError):
+                relative_seconds = None
+
+        is_question = (
+            "?" in message_text
+            or message_text.lower().startswith(
+                ("why ", "how ", "what ", "when ", "where ")
+            )
+        )
+
+        is_reaction = bool(
+            re.search(
+                r"!|😂|🤣|😭|🔥|❤️|😍|😮|😱|👏|💀|🎉|💯",
+                message_text
+            )
+        )
+
+        if is_question:
+            question_count += 1
+
+        if is_reaction:
+            reaction_count += 1
+
+        words = re.findall(
+            r"[a-zA-Z]{3,}",
+            message_text.lower()
+        )
+
+        for word in words:
+            if word not in stop_words:
+                topics[word] += 1
+
+        if relative_seconds is not None:
+            bucket_start = (
+                relative_seconds // 30
+            ) * 30
+
+            bucket = buckets.setdefault(
+                bucket_start,
+                {
+                    "start_seconds": bucket_start,
+                    "end_seconds": bucket_start + 30,
+                    "messages": 0,
+                    "questions": 0,
+                    "reactions": 0
+                }
+            )
+
+            bucket["messages"] += 1
+            bucket["questions"] += int(is_question)
+            bucket["reactions"] += int(is_reaction)
+
+        messages.append({
+            "text": message_text,
+            "published_at": published_at,
+            "is_question": is_question,
+            "is_reaction": is_reaction,
+            "relative_seconds": relative_seconds
+        })
+
+    ranked_moments = []
+
+    for bucket in buckets.values():
+        score = (
+            bucket["messages"]
+            + bucket["questions"] * 1.5
+            + bucket["reactions"] * 0.75
+        )
+
+        ranked_moments.append({
+            **bucket,
+            "score": round(score, 2)
+        })
+
+    ranked_moments.sort(
+        key=lambda item: item["score"],
+        reverse=True
+    )
+
+    top_topics = [
+        {"word": word, "count": count}
+        for word, count in topics.most_common(10)
+        if count >= 2
+    ]
+
+    return {
+        "message_count": len(messages),
+        "question_count": question_count,
+        "reaction_count": reaction_count,
+        "top_topics": top_topics,
+        "highlight_moments": ranked_moments[:8],
+        "sample_messages": messages[-8:]
+    }
+
+
+def fetch_youtube_live_chat(video_id, page_token=None):
+    """Fetch one authorised/publicly accessible chat snapshot."""
+
+    video_data = youtube_api_get(
+        "videos",
+        {
+            "part": "snippet,liveStreamingDetails",
+            "id": video_id
+        }
+    )
+
+    video_items = video_data.get("items", [])
+
+    if not video_items:
+        raise HTTPException(
+            status_code=404,
+            detail="YouTube could not find this video."
+        )
+
+    video = video_items[0]
+    snippet = video.get("snippet", {})
+    live_details = video.get("liveStreamingDetails", {})
+
+    chat_id = live_details.get("activeLiveChatId")
+
+    if not chat_id:
+        return {
+            "ok": True,
+            "chat_available": False,
+            "live_status": snippet.get(
+                "liveBroadcastContent",
+                "none"
+            ),
+            "title": snippet.get("title"),
+            "channel": snippet.get("channelTitle"),
+            "message": (
+                "No active live-chat ID was provided by YouTube. "
+                "The stream may not be live or chat may be unavailable."
+            ),
+            "messages": {
+                "message_count": 0,
+                "question_count": 0,
+                "reaction_count": 0,
+                "top_topics": [],
+                "highlight_moments": [],
+                "sample_messages": []
+            }
+        }
+
+    chat_params = {
+        "liveChatId": chat_id,
+        "part": "snippet",
+        "maxResults": 200
+    }
+
+    if page_token:
+        if len(page_token) > 2048:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid chat page token."
+            )
+
+        chat_params["pageToken"] = page_token
+
+    chat_data = youtube_api_get(
+        "liveChat/messages",
+        chat_params
+    )
+
+    items = chat_data.get("items", [])
+
+    analysis = analyse_live_chat_messages(
+        items,
+        live_details.get("actualStartTime")
+    )
+
+    return {
+        "ok": True,
+        "chat_available": True,
+        "provider": "YouTube Data API v3",
+        "video_id": video_id,
+        "title": snippet.get("title"),
+        "channel": snippet.get("channelTitle"),
+        "live_status": snippet.get(
+            "liveBroadcastContent",
+            "none"
+        ),
+        "messages": analysis,
+        "polling_interval_ms": chat_data.get(
+            "pollingIntervalMillis"
+        ),
+        "next_page_token": chat_data.get(
+            "nextPageToken"
+        ),
+        "message": (
+            "Live chat snapshot analysed. "
+            "No author identities or chat messages are stored by VYRO."
+        )
+    }
+
+
+@app.post("/youtube/live-chat")
+def youtube_live_chat(
+    request: YouTubeLiveChatRequest
+):
+    video_id = extract_youtube_video_id(
+        request.url
+    )
+
+    return fetch_youtube_live_chat(
+        video_id,
+        request.page_token
+    )
+
