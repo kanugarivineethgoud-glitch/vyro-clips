@@ -1,6 +1,7 @@
 
 import json
 import logging
+import os
 import re
 import sqlite3
 import subprocess
@@ -23,8 +24,8 @@ from scenedetect.detectors import ContentDetector
 
 
 # ==========================================
-# VYRO CLIPS 2.3
-# AI HIGHLIGHT ENGINE + YOUTUBE INSPECTOR
+# VYRO CLIPS 2.4
+# AI HIGHLIGHT ENGINE + YOUTUBE LIVEPULSE
 # ==========================================
 
 logging.basicConfig(level=logging.INFO)
@@ -53,14 +54,26 @@ MAX_CLIPS = 5
 executor = ThreadPoolExecutor(max_workers=1)
 whisper_model = None
 
+# Read the secret from Render's environment.
+# Never put the API key in frontend code or return it in API responses.
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "").strip()
+
 
 # ==========================================
-# YOUTUBE INSPECTOR
+# YOUTUBE REQUEST MODELS
 # ==========================================
 
 class YouTubeInspectRequest(BaseModel):
     url: str
 
+
+class YouTubeLiveStatusRequest(BaseModel):
+    url: str
+
+
+# ==========================================
+# YOUTUBE URL VALIDATION
+# ==========================================
 
 YOUTUBE_HOSTS = {
     "youtube.com",
@@ -96,7 +109,14 @@ def extract_youtube_video_id(raw_url):
 
     try:
         parsed = urlparse(raw_url)
-    except Exception:
+
+        if parsed.port:
+            raise HTTPException(
+                status_code=400,
+                detail="This YouTube URL format is not supported."
+            )
+
+    except ValueError:
         raise HTTPException(
             status_code=400,
             detail="Invalid URL."
@@ -108,7 +128,7 @@ def extract_youtube_video_id(raw_url):
             detail="Please use a secure HTTPS YouTube URL."
         )
 
-    if parsed.username or parsed.password or parsed.port:
+    if parsed.username or parsed.password:
         raise HTTPException(
             status_code=400,
             detail="This YouTube URL format is not supported."
@@ -123,6 +143,7 @@ def extract_youtube_video_id(raw_url):
         )
 
     video_id = None
+
     path_parts = [
         part for part in parsed.path.split("/")
         if part
@@ -158,6 +179,10 @@ def extract_youtube_video_id(raw_url):
     return video_id
 
 
+# ==========================================
+# YOUTUBE INSPECTOR
+# ==========================================
+
 def fetch_youtube_metadata(video_id):
     """
     Retrieve public YouTube metadata through oEmbed.
@@ -180,7 +205,7 @@ def fetch_youtube_metadata(video_id):
     request = Request(
         oembed_url,
         headers={
-            "User-Agent": "VYRO-CLIPS/2.3"
+            "User-Agent": "VYRO-CLIPS/2.4"
         }
     )
 
@@ -252,6 +277,172 @@ def fetch_youtube_metadata(video_id):
             "This endpoint does not retrieve video footage."
         )
     }
+
+
+# ==========================================
+# YOUTUBE LIVEPULSE ENGINE
+# ==========================================
+
+def fetch_youtube_live_status(video_id):
+    """
+    Check official YouTube Data API v3 live information.
+
+    The API key is read from the server environment.
+    The key is never returned to the client.
+    """
+
+    if not YOUTUBE_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "YouTube API key is not configured on the server. "
+                "Please check the YOUTUBE_API_KEY environment variable."
+            )
+        )
+
+    api_url = (
+        "https://www.googleapis.com/youtube/v3/videos?"
+        + urlencode({
+            "part": "snippet,liveStreamingDetails",
+            "id": video_id,
+            "key": YOUTUBE_API_KEY
+        })
+    )
+
+    request = Request(
+        api_url,
+        headers={
+            "User-Agent": "VYRO-CLIPS/2.4"
+        }
+    )
+
+    try:
+        with urlopen(request, timeout=15) as response:
+            payload = json.loads(
+                response.read(1024 * 1024).decode("utf-8")
+            )
+
+    except HTTPError as error:
+        logger.warning(
+            "YouTube Data API returned HTTP %s",
+            error.code
+        )
+
+        if error.code == 403:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "YouTube API access was denied. "
+                    "Check the API key restrictions, enabled API "
+                    "and available quota in Google Cloud."
+                )
+            )
+
+        if error.code == 400:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "YouTube rejected the live-status request. "
+                    "Please check the video URL and API configuration."
+                )
+            )
+
+        raise HTTPException(
+            status_code=502,
+            detail="YouTube live-status service returned an error."
+        )
+
+    except (URLError, TimeoutError):
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Could not connect to YouTube live-status service. "
+                "Please try again."
+            )
+        )
+
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(
+            status_code=502,
+            detail="YouTube returned an invalid live-status response."
+        )
+
+    except Exception:
+        logger.exception("YouTube live-status request failed")
+
+        raise HTTPException(
+            status_code=502,
+            detail="Live-status lookup failed."
+        )
+
+    items = payload.get("items", [])
+
+    if not items:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "YouTube did not return this video. "
+                "It may be unavailable or inaccessible."
+            )
+        )
+
+    item = items[0]
+    snippet = item.get("snippet", {})
+    live_details = item.get("liveStreamingDetails", {})
+
+    broadcast_status = snippet.get(
+        "liveBroadcastContent",
+        "none"
+    )
+
+    if broadcast_status == "live":
+        live_status = "live"
+
+    elif broadcast_status == "upcoming":
+        live_status = "upcoming"
+
+    else:
+        live_status = "not_live"
+
+    active_chat_id = live_details.get("activeLiveChatId")
+
+    result = {
+        "ok": True,
+        "provider": "YouTube Data API v3",
+        "video_id": video_id,
+        "url": (
+            "https://www.youtube.com/watch?"
+            + urlencode({"v": video_id})
+        ),
+        "title": snippet.get("title"),
+        "channel": snippet.get("channelTitle"),
+        "live_status": live_status,
+        "live_chat_available": bool(active_chat_id),
+        "live_chat_messages": "not_read",
+        "footage_access": "not_provided",
+        "message": (
+            "Live status checked using YouTube Data API. "
+            "This endpoint does not read chat messages "
+            "or retrieve video footage."
+        )
+    }
+
+    if live_details.get("actualStartTime"):
+        result["actual_start_time"] = (
+            live_details["actualStartTime"]
+        )
+
+    if live_details.get("scheduledStartTime"):
+        result["scheduled_start_time"] = (
+            live_details["scheduledStartTime"]
+        )
+
+    if live_details.get("concurrentViewers"):
+        result["concurrent_viewers"] = (
+            live_details["concurrentViewers"]
+        )
+
+    return result
 
 
 # ==========================================
@@ -1116,11 +1307,21 @@ def home():
 
     return {
         "message": "VYRO CLIPS API is running",
-        "version": "2.3",
+        "version": "2.4",
         "engine": (
             "VYRO AI Highlight Intelligence "
-            "+ YouTube Inspector"
-        )
+            "+ YouTube Inspector "
+            "+ LivePulse"
+        ),
+        "features": {
+            "video_upload": True,
+            "ai_highlight_detection": True,
+            "clip_export": True,
+            "youtube_inspector": True,
+            "youtube_live_status": True,
+            "youtube_chat_reading": False,
+            "youtube_footage_download": False
+        }
     }
 
 
@@ -1134,6 +1335,18 @@ def inspect_youtube_video(
     )
 
     return fetch_youtube_metadata(video_id)
+
+
+@app.post("/youtube/live-status")
+def youtube_live_status(
+    request: YouTubeLiveStatusRequest
+):
+
+    video_id = extract_youtube_video_id(
+        request.url
+    )
+
+    return fetch_youtube_live_status(video_id)
 
 
 @app.post("/upload")
