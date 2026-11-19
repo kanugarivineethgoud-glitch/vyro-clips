@@ -1,6 +1,7 @@
 
 import json
 import logging
+import re
 import sqlite3
 import subprocess
 import time
@@ -17,9 +18,10 @@ from scenedetect import open_video, SceneManager
 from scenedetect.detectors import ContentDetector
 
 
-# -------------------------
-# APP CONFIGURATION
-# -------------------------
+# ==========================================
+# VYRO CLIPS 2.2
+# AI HIGHLIGHT INTELLIGENCE ENGINE
+# ==========================================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vyro")
@@ -42,14 +44,15 @@ UPLOADS.mkdir(parents=True, exist_ok=True)
 OUTPUTS.mkdir(parents=True, exist_ok=True)
 
 MAX_UPLOAD_SIZE = 250 * 1024 * 1024
+MAX_CLIPS = 5
 
 executor = ThreadPoolExecutor(max_workers=1)
 whisper_model = None
 
 
-# -------------------------
+# ==========================================
 # DATABASE
-# -------------------------
+# ==========================================
 
 def get_db():
     connection = sqlite3.connect(DATABASE, timeout=30)
@@ -59,6 +62,7 @@ def get_db():
 
 def init_db():
     with get_db() as db:
+
         db.execute("""
             CREATE TABLE IF NOT EXISTS jobs (
                 job_id TEXT PRIMARY KEY,
@@ -69,7 +73,6 @@ def init_db():
             )
         """)
 
-        # Safe migration for existing VYRO databases.
         columns = {
             row["name"]
             for row in db.execute(
@@ -97,7 +100,12 @@ def create_job(job_id):
     with get_db() as db:
         db.execute(
             """
-            INSERT INTO jobs (job_id, status, stage, progress)
+            INSERT INTO jobs (
+                job_id,
+                status,
+                stage,
+                progress
+            )
             VALUES (?, ?, ?, ?)
             """,
             (job_id, "queued", "Waiting", 0)
@@ -118,11 +126,20 @@ def update_job(
 
     updates = {
         "status": status,
-        "clips": json.dumps(clips) if clips is not None else None,
-        "error": str(error)[:2000] if error is not None else None,
+        "clips": (
+            json.dumps(clips)
+            if clips is not None else None
+        ),
+        "error": (
+            str(error)[:2000]
+            if error is not None else None
+        ),
         "stage": stage,
         "progress": progress,
-        "timings": json.dumps(timings) if timings is not None else None
+        "timings": (
+            json.dumps(timings)
+            if timings is not None else None
+        )
     }
 
     for column, value in updates.items():
@@ -137,7 +154,11 @@ def update_job(
 
     with get_db() as db:
         db.execute(
-            f"UPDATE jobs SET {', '.join(fields)} WHERE job_id = ?",
+            f"""
+            UPDATE jobs
+            SET {", ".join(fields)}
+            WHERE job_id = ?
+            """,
             values
         )
 
@@ -165,15 +186,15 @@ def recover_interrupted_jobs():
         """)
 
 
-# -------------------------
+# ==========================================
 # AI MODEL
-# -------------------------
+# ==========================================
 
 def get_whisper():
     global whisper_model
 
     if whisper_model is None:
-        logger.info("Loading Whisper tiny model")
+        logger.info("Loading VYRO Whisper model")
 
         whisper_model = WhisperModel(
             "tiny",
@@ -183,16 +204,17 @@ def get_whisper():
             num_workers=1
         )
 
-        logger.info("Whisper model loaded")
+        logger.info("Whisper model ready")
 
     return whisper_model
 
 
-# -------------------------
+# ==========================================
 # VIDEO UTILITIES
-# -------------------------
+# ==========================================
 
 def get_video_duration(video_path):
+
     result = subprocess.run(
         [
             "ffprobe",
@@ -207,11 +229,18 @@ def get_video_duration(video_path):
         timeout=60
     )
 
-    return float(result.stdout.strip())
+    duration = float(result.stdout.strip())
+
+    if duration <= 0:
+        raise Exception("Invalid video duration.")
+
+    return duration
 
 
 def detect_scenes(video_path):
+
     video = open_video(str(video_path))
+
     manager = SceneManager()
 
     manager.add_detector(
@@ -219,14 +248,387 @@ def detect_scenes(video_path):
     )
 
     manager.detect_scenes(video)
+
     return manager.get_scene_list()
 
 
-# -------------------------
-# CLIP ANALYSIS
-# -------------------------
+# ==========================================
+# VYRO HIGHLIGHT INTELLIGENCE
+# ==========================================
+
+STRONG_PHRASES = [
+    "no way",
+    "oh my god",
+    "i can't believe",
+    "unbelievable",
+    "let's go",
+    "that's insane",
+    "what just happened",
+    "wait for it",
+    "finally",
+    "the best part",
+    "the worst part",
+    "you won't believe",
+    "this is crazy",
+    "that was amazing",
+    "incredible",
+    "what a moment"
+]
+
+STORY_PHRASES = [
+    "but then",
+    "because of that",
+    "what happened next",
+    "in the end",
+    "as a result",
+    "the truth is",
+    "i realized",
+    "i learned",
+    "my biggest mistake",
+    "the solution",
+    "the problem was",
+    "the reason is",
+    "here is what happened",
+    "the moment when"
+]
+
+EDUCATIONAL_PHRASES = [
+    "here is how",
+    "how to",
+    "step by step",
+    "one important thing",
+    "a simple trick",
+    "the secret",
+    "you should know",
+    "the difference is",
+    "the important thing",
+    "for example",
+    "the main reason",
+    "remember this"
+]
+
+EMOTION_WORDS = [
+    "amazing",
+    "awesome",
+    "terrible",
+    "shocking",
+    "surprising",
+    "exciting",
+    "funny",
+    "hilarious",
+    "incredible",
+    "beautiful",
+    "fantastic",
+    "ridiculous",
+    "unbelievable",
+    "serious",
+    "dangerous"
+]
+
+FILLER_WORDS = [
+    "um",
+    "uh",
+    "erm",
+    "basically",
+    "literally"
+]
+
+
+def count_phrases(text, phrases):
+    return sum(
+        text.count(phrase)
+        for phrase in phrases
+    )
+
+
+def score_highlight(transcript, relevant, window_duration):
+
+    text = transcript.lower().strip()
+    words = re.findall(r"\b[\w']+\b", text)
+
+    if not words:
+        return 0
+
+    score = 1.0
+
+    # 1. Strong attention signals.
+    strong = count_phrases(
+        text,
+        STRONG_PHRASES
+    )
+
+    score += min(strong, 3) * 2.5
+
+    # 2. Storytelling and narrative.
+    storytelling = count_phrases(
+        text,
+        STORY_PHRASES
+    )
+
+    score += min(storytelling, 4) * 2.0
+
+    # 3. Educational and useful information.
+    educational = count_phrases(
+        text,
+        EDUCATIONAL_PHRASES
+    )
+
+    score += min(educational, 4) * 1.8
+
+    # 4. Emotion-related language.
+    emotions = count_phrases(
+        text,
+        EMOTION_WORDS
+    )
+
+    score += min(emotions, 4) * 1.2
+
+    # 5. Questions and exclamations.
+    questions = transcript.count("?")
+    exclamations = transcript.count("!")
+
+    score += min(questions, 3) * 0.7
+    score += min(exclamations, 3) * 0.7
+
+    # 6. Speech density.
+    spoken_seconds = sum(
+        max(0, item["end"] - item["start"])
+        for item in relevant
+    )
+
+    speech_ratio = min(
+        1.0,
+        spoken_seconds / max(window_duration, 1)
+    )
+
+    score += speech_ratio * 2
+
+    # 7. Prefer meaningful transcript length.
+    word_count = len(words)
+
+    if 25 <= word_count <= 110:
+        score += 2
+
+    elif 15 <= word_count < 25:
+        score += 1
+
+    elif word_count < 8:
+        score -= 2
+
+    # 8. Vocabulary variety.
+    unique_ratio = (
+        len(set(words)) / max(word_count, 1)
+    )
+
+    if unique_ratio > 0.55:
+        score += 1
+
+    elif unique_ratio < 0.25:
+        score -= 1.5
+
+    # 9. Filler-word penalty.
+    filler_count = sum(
+        len(
+            re.findall(
+                r"\b" + re.escape(filler) + r"\b",
+                text
+            )
+        )
+        for filler in FILLER_WORDS
+    )
+
+    filler_ratio = (
+        filler_count / max(word_count, 1)
+    )
+
+    if filler_ratio > 0.15:
+        score -= 1.5
+
+    # 10. Avoid extremely short fragments.
+    if window_duration < 8:
+        score -= 2
+
+    return round(max(0, score), 2)
+
+
+def build_candidates(speech, duration):
+
+    candidates = []
+
+    if not speech:
+        return candidates
+
+    # Automatically choose a suitable target duration.
+    target_length = min(
+        35,
+        max(12, duration * 0.32)
+    )
+
+    target_length = min(
+        target_length,
+        duration
+    )
+
+    if target_length <= 0:
+        return candidates
+
+    step = max(
+        5,
+        target_length * 0.5
+    )
+
+    starts = []
+    current = 0.0
+
+    while current + target_length <= duration:
+        starts.append(current)
+        current += step
+
+    final_start = max(
+        0,
+        duration - target_length
+    )
+
+    if (
+        not starts
+        or abs(starts[-1] - final_start) > 1
+    ):
+        starts.append(final_start)
+
+    # Evaluate each window in context.
+    for window_start in starts:
+
+        window_end = min(
+            duration,
+            window_start + target_length
+        )
+
+        relevant = [
+            item for item in speech
+            if item["end"] > window_start
+            and item["start"] < window_end
+        ]
+
+        if not relevant:
+            continue
+
+        transcript = " ".join(
+            item["text"]
+            for item in relevant
+        ).strip()
+
+        score = score_highlight(
+            transcript,
+            relevant,
+            window_end - window_start
+        )
+
+        if score <= 0:
+            continue
+
+        first_speech = relevant[0]["start"]
+        last_speech = relevant[-1]["end"]
+
+        # Preserve a little context around speech.
+        clip_start = max(
+            window_start,
+            first_speech - 1.5
+        )
+
+        clip_end = min(
+            window_end,
+            last_speech + 1.5
+        )
+
+        # Avoid excessively short clips.
+        if clip_end - clip_start < 10:
+            clip_start = window_start
+            clip_end = window_end
+
+        if clip_end <= clip_start:
+            continue
+
+        candidates.append({
+            "start": round(clip_start, 3),
+            "end": round(clip_end, 3),
+            "score": score,
+            "transcript": transcript
+        })
+
+    return candidates
+
+
+def select_best_candidates(candidates):
+
+    ranked = sorted(
+        candidates,
+        key=lambda item: item["score"],
+        reverse=True
+    )
+
+    selected = []
+
+    for candidate in ranked:
+
+        overlaps = False
+
+        for existing in selected:
+
+            overlap_start = max(
+                candidate["start"],
+                existing["start"]
+            )
+
+            overlap_end = min(
+                candidate["end"],
+                existing["end"]
+            )
+
+            overlap = max(
+                0,
+                overlap_end - overlap_start
+            )
+
+            shorter_duration = min(
+                candidate["end"] - candidate["start"],
+                existing["end"] - existing["start"]
+            )
+
+            overlap_ratio = (
+                overlap / shorter_duration
+                if shorter_duration > 0 else 0
+            )
+
+            if overlap_ratio > 0.35:
+                overlaps = True
+                break
+
+            # Keep a small gap between clips.
+            if (
+                candidate["start"] < existing["end"] + 2
+                and candidate["end"] > existing["start"] - 2
+            ):
+                overlaps = True
+                break
+
+        if not overlaps:
+            selected.append(candidate)
+
+        if len(selected) >= MAX_CLIPS:
+            break
+
+    return sorted(
+        selected,
+        key=lambda item: item["start"]
+    )
+
+
+# ==========================================
+# MAIN VIDEO PROCESSING
+# ==========================================
 
 def analyse_video(job_id, video_path):
+
     started = time.perf_counter()
 
     timings = {
@@ -237,37 +639,46 @@ def analyse_video(job_id, video_path):
     }
 
     try:
+
         update_job(
             job_id,
             status="analysing",
             stage="Checking video",
-            progress=5
+            progress=5,
+            timings=timings
         )
 
-        duration = get_video_duration(video_path)
+        duration = get_video_duration(
+            video_path
+        )
 
-        if duration <= 0:
-            raise Exception("Invalid video duration.")
+        # ----------------------------------
+        # LOAD AI MODEL
+        # ----------------------------------
 
-        # Load or reuse the AI model.
         model_start = time.perf_counter()
+
         model = get_whisper()
 
         timings["model_load_seconds"] = round(
-            time.perf_counter() - model_start, 2
+            time.perf_counter() - model_start,
+            2
         )
 
-        # Faster transcription settings.
+        # ----------------------------------
+        # TRANSCRIBE
+        # ----------------------------------
+
         update_job(
             job_id,
-            stage="AI speech analysis",
+            stage="Understanding speech",
             progress=15,
             timings=timings
         )
 
         transcription_start = time.perf_counter()
 
-        segments, _ = model.transcribe(
+        segments, info = model.transcribe(
             str(video_path),
             beam_size=1,
             best_of=1,
@@ -279,76 +690,77 @@ def analyse_video(job_id, video_path):
         speech = []
 
         for segment in segments:
+
+            text = segment.text.strip()
+
+            if not text:
+                continue
+
             speech.append({
                 "start": float(segment.start),
                 "end": float(segment.end),
-                "text": segment.text.strip()
+                "text": text
             })
 
         timings["transcription_seconds"] = round(
-            time.perf_counter() - transcription_start, 2
+            time.perf_counter() - transcription_start,
+            2
         )
 
         logger.info(
-            "Job %s transcription took %.2f seconds",
+            "Job %s transcription completed in %.2f seconds",
             job_id,
             timings["transcription_seconds"]
         )
 
-        # Find possible highlights.
+        # ----------------------------------
+        # HIGHLIGHT SELECTION
+        # ----------------------------------
+
         update_job(
             job_id,
-            stage="Finding highlights",
+            stage="Finding interesting moments",
             progress=55,
             timings=timings
         )
 
         selection_start = time.perf_counter()
 
-        candidates = []
+        candidates = build_candidates(
+            speech,
+            duration
+        )
 
-        keywords = [
-            "wow", "amazing", "unbelievable",
-            "important", "listen", "finally",
-            "incredible", "clutch", "winner",
-            "crazy", "no way", "let's go"
-        ]
-
-        for item in speech:
-            words = item["text"].lower()
-            score = 1
-
-            for keyword in keywords:
-                if keyword in words:
-                    score += 2
-
-            start = max(0, item["start"] - 8)
-            end = min(duration, item["end"] + 12)
-
-            if end > start:
-                candidates.append({
-                    "start": start,
-                    "end": end,
-                    "score": score,
-                    "transcript": item["text"]
-                })
-
-        # Only use scene detection for longer videos
-        # when speech-based highlights are unavailable.
+        # Use scene detection for longer videos
+        # only when no speech candidates exist.
         if not candidates and duration >= 120:
+
             try:
-                scenes = detect_scenes(video_path)
+
+                update_job(
+                    job_id,
+                    stage="Checking scene changes",
+                    progress=58
+                )
+
+                scenes = detect_scenes(
+                    video_path
+                )
 
                 for scene_start, scene_end in scenes:
+
                     start = max(
-                        0, scene_start.get_seconds()
+                        0,
+                        scene_start.get_seconds()
                     )
 
                     end = min(
-                        duration, scene_end.get_seconds()
+                        duration,
+                        scene_end.get_seconds()
                     )
 
-                    if end > start:
+                    if end - start >= 10:
+
                         candidates.append({
                             "start": start,
                             "end": end,
@@ -357,13 +769,15 @@ def analyse_video(job_id, video_path):
                         })
 
             except Exception:
+
                 logger.exception(
                     "Scene detection failed for job %s",
                     job_id
                 )
 
-        # Fallback for short videos without speech.
+        # Last-resort fallback.
         if not candidates:
+
             candidates.append({
                 "start": 0,
                 "end": min(duration, 30),
@@ -371,52 +785,54 @@ def analyse_video(job_id, video_path):
                 "transcript": ""
             })
 
-        candidates.sort(
-            key=lambda item: item["score"],
-            reverse=True
-        )
-
-        selected = []
-
-        for candidate in candidates:
-            overlaps = any(
-                candidate["start"] < clip["end"]
-                and candidate["end"] > clip["start"]
-                for clip in selected
-            )
-
-            if not overlaps:
-                selected.append(candidate)
-
-            if len(selected) >= 5:
-                break
-
-        selected.sort(
-            key=lambda item: item["start"]
+        selected = select_best_candidates(
+            candidates
         )
 
         timings["selection_seconds"] = round(
-            time.perf_counter() - selection_start, 2
+            time.perf_counter() - selection_start,
+            2
         )
 
         if not selected:
-            raise Exception("No useful highlights found.")
+            raise Exception(
+                "No clips could be selected."
+            )
 
-        # Export clips.
+        logger.info(
+            "Job %s: %s candidates, %s selected",
+            job_id,
+            len(candidates),
+            len(selected)
+        )
+
+        # ----------------------------------
+        # EXPORT CLIPS
+        # ----------------------------------
+
         update_job(
             job_id,
-            stage="Creating clips",
+            stage="Creating video clips",
             progress=65,
             timings=timings
         )
 
         export_start = time.perf_counter()
+
         results = []
 
-        for index, clip in enumerate(selected, start=1):
-            output = OUTPUTS / f"{job_id}_clip_{index}.mp4"
+        for index, clip in enumerate(
+            selected,
+            start=1
+        ):
 
-            clip_duration = clip["end"] - clip["start"]
+            output = OUTPUTS / (
+                f"{job_id}_clip_{index}.mp4"
+            )
+
+            clip_duration = (
+                clip["end"] - clip["start"]
+            )
 
             if clip_duration <= 0:
                 continue
@@ -446,9 +862,12 @@ def analyse_video(job_id, video_path):
                 timeout=600
             )
 
-            if not output.is_file() or output.stat().st_size == 0:
+            if (
+                not output.is_file()
+                or output.stat().st_size == 0
+            ):
                 raise Exception(
-                    f"Clip {index} export produced an empty file."
+                    f"Clip {index} was not exported correctly."
                 )
 
             results.append({
@@ -461,28 +880,39 @@ def analyse_video(job_id, video_path):
             })
 
             progress = 65 + int(
-                (index / len(selected)) * 30
+                index / len(selected) * 30
             )
 
             update_job(
                 job_id,
-                stage=f"Exporting clip {index} of {len(selected)}",
-                progress=progress
+                stage=(
+                    f"Exporting clip {index} "
+                    f"of {len(selected)}"
+                ),
+                progress=min(progress, 95)
             )
 
         timings["export_seconds"] = round(
-            time.perf_counter() - export_start, 2
+            time.perf_counter() - export_start,
+            2
         )
 
         if not results:
-            raise Exception("No clips could be generated.")
+            raise Exception(
+                "No clips could be generated."
+            )
+
+        # ----------------------------------
+        # COMPLETE JOB
+        # ----------------------------------
 
         timings["total_seconds"] = round(
-            time.perf_counter() - started, 2
+            time.perf_counter() - started,
+            2
         )
 
         logger.info(
-            "Job %s completed. Timings: %s",
+            "Job %s completed: %s",
             job_id,
             timings
         )
@@ -497,6 +927,7 @@ def analyse_video(job_id, video_path):
         )
 
     except Exception as error:
+
         logger.exception(
             "Processing failed for job %s",
             job_id
@@ -510,41 +941,55 @@ def analyse_video(job_id, video_path):
         )
 
 
-# -------------------------
-# API
-# -------------------------
+# ==========================================
+# API ENDPOINTS
+# ==========================================
 
 @app.get("/")
 def home():
+
     return {
         "message": "VYRO CLIPS API is running",
-        "version": "2.1"
+        "version": "2.2",
+        "engine": "VYRO AI Highlight Intelligence"
     }
 
 
 @app.post("/upload")
-async def upload_video(video: UploadFile = File(...)):
+async def upload_video(
+    video: UploadFile = File(...)
+):
 
     filename = video.filename or ""
 
     if not filename.lower().endswith(
         (".mp4", ".mov", ".mkv", ".webm")
     ):
+
         raise HTTPException(
             status_code=400,
             detail="Unsupported video format"
         )
 
     job_id = str(uuid.uuid4())
+
     extension = Path(filename).suffix.lower()
-    video_path = UPLOADS / f"{job_id}{extension}"
+
+    video_path = UPLOADS / (
+        f"{job_id}{extension}"
+    )
 
     total_size = 0
 
     try:
+
         with video_path.open("wb") as buffer:
+
             while True:
-                chunk = await video.read(1024 * 1024)
+
+                chunk = await video.read(
+                    1024 * 1024
+                )
 
                 if not chunk:
                     break
@@ -552,14 +997,19 @@ async def upload_video(video: UploadFile = File(...)):
                 total_size += len(chunk)
 
                 if total_size > MAX_UPLOAD_SIZE:
+
                     raise HTTPException(
                         status_code=413,
-                        detail="Video exceeds the 250 MB upload limit"
+                        detail=(
+                            "Video exceeds the "
+                            "250 MB upload limit"
+                        )
                     )
 
                 buffer.write(chunk)
 
         if total_size == 0:
+
             raise HTTPException(
                 status_code=400,
                 detail="Uploaded video is empty"
@@ -576,14 +1026,19 @@ async def upload_video(video: UploadFile = File(...)):
         return {
             "job_id": job_id,
             "status": "queued",
-            "message": "Video uploaded. Analysis started."
+            "message": (
+                "Video uploaded. "
+                "VYRO AI analysis started."
+            )
         }
 
     except HTTPException:
+
         video_path.unlink(missing_ok=True)
         raise
 
     except Exception as error:
+
         video_path.unlink(missing_ok=True)
 
         raise HTTPException(
@@ -592,6 +1047,7 @@ async def upload_video(video: UploadFile = File(...)):
         )
 
     finally:
+
         await video.close()
 
 
@@ -601,6 +1057,7 @@ def job_status(job_id: str):
     job = get_job(job_id)
 
     if job is None:
+
         raise HTTPException(
             status_code=404,
             detail="Job not found"
@@ -611,7 +1068,9 @@ def job_status(job_id: str):
         "clips": json.loads(job["clips"]),
         "stage": job["stage"],
         "progress": job["progress"],
-        "timings": json.loads(job["timings"] or "{}")
+        "timings": json.loads(
+            job["timings"] or "{}"
+        )
     }
 
     if job["error"]:
@@ -624,6 +1083,7 @@ def job_status(job_id: str):
 def download_clip(filename: str):
 
     if Path(filename).name != filename:
+
         raise HTTPException(
             status_code=400,
             detail="Invalid filename"
@@ -632,6 +1092,7 @@ def download_clip(filename: str):
     path = OUTPUTS / filename
 
     if not path.is_file():
+
         raise HTTPException(
             status_code=404,
             detail="Clip not found"
