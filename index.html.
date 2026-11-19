@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VYRO CLIPS — AI Clipping Studio</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Arial,sans-serif;background:#080a10;color:#f5f6fa}
+button,input{font:inherit}
+.app{display:flex;min-height:100vh}
+.sidebar{width:245px;background:#0e111b;border-right:1px solid #252a39;padding:26px 18px;flex-shrink:0}
+.logo{font-size:25px;font-weight:900;letter-spacing:2px;margin-bottom:8px}
+.logo span{color:#8b70ff}
+.tag{color:#777f95;font-size:10px;letter-spacing:3px;margin-bottom:42px}
+.navtitle{font-size:10px;color:#707991;margin:25px 10px 12px}
+.nav{padding:13px 12px;border-radius:10px;color:#aeb5c9;margin:5px 0;font-size:14px}
+.nav.active{background:#242044;color:#b6a4ff;border:1px solid #51418a}
+.sidebar-bottom{margin-top:55px;padding:15px;background:#191b2a;border-radius:12px;color:#aeb5c9;font-size:12px;line-height:1.8}
+.main{flex:1;min-width:0;padding:32px 4%;max-width:1500px;margin:auto}
+.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:38px}
+.top h1{font-size:27px}
+.muted{color:#858da2;font-size:13px;margin-top:8px}
+.avatar{border:1px solid #363b4e;padding:10px 14px;border-radius:12px;font-size:12px}
+.hero{background:linear-gradient(115deg,#1d1740,#171b31 55%,#111827);border:1px solid #51418a;border-radius:19px;padding:30px;margin-bottom:28px}
+.eyebrow{font-size:11px;letter-spacing:2px;color:#b7a5ff}
+.hero h2{font-size:clamp(25px,4vw,39px);margin:15px 0 10px}
+.hero p{color:#b4b8ca;font-size:14px;line-height:1.7;max-width:600px}
+.button{border:0;background:#9475ff;color:white;padding:13px 20px;border-radius:10px;font-weight:700;cursor:pointer;margin-top:22px}
+.button:hover{background:#aa91ff}
+.sectionhead{display:flex;justify-content:space-between;align-items:center;margin:30px 0 16px}
+.sectionhead h3{font-size:18px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.card{background:#111521;border:1px solid #282e40;border-radius:15px;padding:19px}
+.card .symbol{font-size:24px;margin-bottom:14px}
+.card h4{font-size:14px;margin-bottom:8px}
+.card p{color:#8992a8;font-size:12px;line-height:1.6}
+.upload{border:1px dashed #6655a7;background:#121324;border-radius:17px;text-align:center;padding:42px 20px;cursor:pointer}
+.upload:hover{background:#19182e}
+.upload-icon{font-size:38px;margin-bottom:14px}
+.upload h3{font-size:17px;margin-bottom:9px}
+.upload p{font-size:12px;color:#929bb0;line-height:1.8}
+.upload input{display:none}
+.upload .button{display:inline-block}
+.formrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:20px}
+.field{background:#111521;border:1px solid #282e40;padding:17px;border-radius:13px}
+.field label{display:block;color:#aeb5c9;font-size:12px;margin-bottom:10px}
+.field select{width:100%;background:#202536;color:white;border:1px solid #383e51;padding:11px;border-radius:8px}
+.status{color:#929bb0;font-size:12px;margin-top:17px;line-height:1.7}
+@media(max-width:850px){.sidebar{width:75px;padding:20px 9px}.logo{font-size:17px;text-align:center}.tag,.navtitle,.nav span,.sidebar-bottom{display:none}.nav{text-align:center;font-size:18px;padding:15px 5px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){.sidebar{width:57px}.main{padding:23px 13px}.top h1{font-size:22px}.grid,.formrow{grid-template-columns:1fr}.hero{padding:23px}.avatar{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<div class="logo">VYRO<span>.</span></div>
+<div class="tag">CLIPS STUDIO</div>
+<div class="navtitle">WORKSPACE</div>
+<div class="nav active">◫ <span>Dashboard</span></div>
+<div class="nav">✂ <span>AI Clips</span></div>
+<div class="nav">▤ <span>My Projects</span></div>
+<div class="nav">▣ <span>Templates</span></div>
+<div class="navtitle">TOOLS</div>
+<div class="nav">◉ <span>Captions</span></div>
+<div class="nav">▧ <span>Settings</span></div>
+<div class="sidebar-bottom">VYRO CLIPS<br>Creative Studio<br>Version 1.0</div>
+</aside>
+<main class="main">
+<header class="top">
+<div><h1>Creative Studio</h1><p class="muted">Your next great clip starts here.</p></div>
+<div class="avatar">✦ PRO STUDIO</div>
+</header>
+
+<section class="hero">
+<div class="eyebrow">✦ THE AI CLIPPING STUDIO</div>
+<h2>Long videos.<br>Short-form perfection.</h2>
+<p>Transform podcasts, interviews and gaming videos into engaging short clips with intelligent editing tools.</p>
+<button class="button" onclick="document.getElementById('video').click()">＋ Start creating</button>
+</section>
+
+<div class="sectionhead"><h3>Start creating</h3></div>
+<section class="upload" onclick="document.getElementById('video').click()">
+<div class="upload-icon">⇧</div>
+<h3 id="uploadTitle">Upload your video</h3>
+<p id="uploadInfo">Drop your video here or browse files<br>MP4, MOV and WEBM supported</p>
+<label class="button" for="video">Choose video</label>
+<input type="file" id="video" accept="video/*">
+</section>
+
+<div class="formrow">
+<div class="field"><label>CLIP STYLE</label>
+<select id="style"><option>Automatic — all content</option><option>Podcast & Interviews</option><option>Gaming Highlights</option><option>Educational Content</option><option>Commentary</option></select></div>
+<div class="field"><label>OUTPUT FORMAT</label>
+<select id="format"><option>9:16 — Shorts / Reels</option><option>16:9 — Landscape</option><option>1:1 — Square</option></select></div>
+<div class="field"><label>VIDEO QUALITY</label>
+<select id="quality"><option>1080p — Full HD</option><option>4K — Ultra HD</option></select></div>
+<div class="field"><label>CAPTIONS</label>
+<select id="captions"><option>Animated captions</option><option>Clean subtitles</option><option>No captions</option></select></div>
+</div>
+
+<div class="sectionhead"><h3>Studio tools</h3></div>
+<section class="grid">
+<div class="card"><div class="symbol">✂</div><h4>AI Clip Finder</h4><p>Identify interesting moments and potential highlights.</p></div>
+<div class="card"><div class="symbol">💬</div><h4>Smart Captions</h4><p>Create readable subtitles with professional styles.</p></div>
+<div class="card"><div class="symbol">◉</div><h4>Smart Reframe</h4><p>Prepare videos for vertical and horizontal screens.</p></div>
+<div class="card"><div class="symbol">🎮</div><h4>Gaming Highlights</h4><p>Dedicated highlight workflow for gaming footage.</p></div>
+<div class="card"><div class="symbol">🎙</div><h4>Podcast Clips</h4><p>Find compelling moments from conversations.</p></div>
+<div class="card"><div class="symbol">⬇</div><h4>HD Export</h4><p>Prepare high-resolution MP4 exports.</p></div>
+</section>
+<p class="status" id="status">Studio ready. AI processing and export services will be connected in the next development stage.</p>
+</main>
+</div>
+<script>
+const video=document.getElementById('video');
+video.addEventListener('change',()=>{
+ const file=video.files[0];
+ if(!file)return;
+ document.getElementById('uploadTitle').textContent=file.name;
+ document.getElementById('uploadInfo').textContent=(file.size/1024/1024).toFixed(1)+' MB · Video selected';
+ document.getElementById('status').textContent='Video selected successfully. AI processing is not connected yet.';
+});
+</script>
+</body>
+</html>
