@@ -1,10 +1,11 @@
 
-import os
-import uuid
 import json
+import logging
 import sqlite3
-import shutil
 import subprocess
+import time
+import uuid
+
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
@@ -14,6 +15,14 @@ from fastapi.responses import FileResponse
 from faster_whisper import WhisperModel
 from scenedetect import open_video, SceneManager
 from scenedetect.detectors import ContentDetector
+
+
+# -------------------------
+# APP CONFIGURATION
+# -------------------------
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("vyro")
 
 app = FastAPI(title="VYRO CLIPS API")
 
@@ -33,8 +42,8 @@ UPLOADS.mkdir(parents=True, exist_ok=True)
 OUTPUTS.mkdir(parents=True, exist_ok=True)
 
 MAX_UPLOAD_SIZE = 250 * 1024 * 1024
-executor = ThreadPoolExecutor(max_workers=1)
 
+executor = ThreadPoolExecutor(max_workers=1)
 whisper_model = None
 
 
@@ -60,34 +69,77 @@ def init_db():
             )
         """)
 
+        # Safe migration for existing VYRO databases.
+        columns = {
+            row["name"]
+            for row in db.execute(
+                "PRAGMA table_info(jobs)"
+            ).fetchall()
+        }
+
+        if "stage" not in columns:
+            db.execute(
+                "ALTER TABLE jobs ADD COLUMN stage TEXT DEFAULT 'queued'"
+            )
+
+        if "progress" not in columns:
+            db.execute(
+                "ALTER TABLE jobs ADD COLUMN progress INTEGER DEFAULT 0"
+            )
+
+        if "timings" not in columns:
+            db.execute(
+                "ALTER TABLE jobs ADD COLUMN timings TEXT DEFAULT '{}'"
+            )
+
 
 def create_job(job_id):
     with get_db() as db:
         db.execute(
-            "INSERT INTO jobs (job_id, status) VALUES (?, ?)",
-            (job_id, "queued")
+            """
+            INSERT INTO jobs (job_id, status, stage, progress)
+            VALUES (?, ?, ?, ?)
+            """,
+            (job_id, "queued", "Waiting", 0)
         )
 
 
-def update_job(job_id, status=None, clips=None, error=None):
+def update_job(
+    job_id,
+    status=None,
+    clips=None,
+    error=None,
+    stage=None,
+    progress=None,
+    timings=None
+):
+    fields = []
+    values = []
+
+    updates = {
+        "status": status,
+        "clips": json.dumps(clips) if clips is not None else None,
+        "error": str(error)[:2000] if error is not None else None,
+        "stage": stage,
+        "progress": progress,
+        "timings": json.dumps(timings) if timings is not None else None
+    }
+
+    for column, value in updates.items():
+        if value is not None:
+            fields.append(f"{column} = ?")
+            values.append(value)
+
+    if not fields:
+        return
+
+    values.append(job_id)
+
     with get_db() as db:
-        if status is not None:
-            db.execute(
-                "UPDATE jobs SET status = ? WHERE job_id = ?",
-                (status, job_id)
-            )
-
-        if clips is not None:
-            db.execute(
-                "UPDATE jobs SET clips = ? WHERE job_id = ?",
-                (json.dumps(clips), job_id)
-            )
-
-        if error is not None:
-            db.execute(
-                "UPDATE jobs SET error = ? WHERE job_id = ?",
-                (str(error)[:2000], job_id)
-            )
+        db.execute(
+            f"UPDATE jobs SET {', '.join(fields)} WHERE job_id = ?",
+            values
+        )
 
 
 def get_job(job_id):
@@ -107,6 +159,7 @@ def recover_interrupted_jobs():
         db.execute("""
             UPDATE jobs
             SET status = 'failed',
+                stage = 'Interrupted',
                 error = 'Processing was interrupted by a server restart. Please upload again.'
             WHERE status IN ('queued', 'analysing')
         """)
@@ -120,11 +173,17 @@ def get_whisper():
     global whisper_model
 
     if whisper_model is None:
+        logger.info("Loading Whisper tiny model")
+
         whisper_model = WhisperModel(
             "tiny",
             device="cpu",
-            compute_type="int8"
+            compute_type="int8",
+            cpu_threads=1,
+            num_workers=1
         )
+
+        logger.info("Whisper model loaded")
 
     return whisper_model
 
@@ -154,7 +213,11 @@ def get_video_duration(video_path):
 def detect_scenes(video_path):
     video = open_video(str(video_path))
     manager = SceneManager()
-    manager.add_detector(ContentDetector(threshold=27.0))
+
+    manager.add_detector(
+        ContentDetector(threshold=27.0)
+    )
+
     manager.detect_scenes(video)
     return manager.get_scene_list()
 
@@ -164,15 +227,52 @@ def detect_scenes(video_path):
 # -------------------------
 
 def analyse_video(job_id, video_path):
+    started = time.perf_counter()
+
+    timings = {
+        "model_load_seconds": 0,
+        "transcription_seconds": 0,
+        "selection_seconds": 0,
+        "export_seconds": 0
+    }
+
     try:
-        update_job(job_id, status="analysing")
+        update_job(
+            job_id,
+            status="analysing",
+            stage="Checking video",
+            progress=5
+        )
 
         duration = get_video_duration(video_path)
 
+        if duration <= 0:
+            raise Exception("Invalid video duration.")
+
+        # Load or reuse the AI model.
+        model_start = time.perf_counter()
         model = get_whisper()
+
+        timings["model_load_seconds"] = round(
+            time.perf_counter() - model_start, 2
+        )
+
+        # Faster transcription settings.
+        update_job(
+            job_id,
+            stage="AI speech analysis",
+            progress=15,
+            timings=timings
+        )
+
+        transcription_start = time.perf_counter()
 
         segments, _ = model.transcribe(
             str(video_path),
+            beam_size=1,
+            best_of=1,
+            temperature=0,
+            condition_on_previous_text=False,
             vad_filter=True
         )
 
@@ -184,6 +284,26 @@ def analyse_video(job_id, video_path):
                 "end": float(segment.end),
                 "text": segment.text.strip()
             })
+
+        timings["transcription_seconds"] = round(
+            time.perf_counter() - transcription_start, 2
+        )
+
+        logger.info(
+            "Job %s transcription took %.2f seconds",
+            job_id,
+            timings["transcription_seconds"]
+        )
+
+        # Find possible highlights.
+        update_job(
+            job_id,
+            stage="Finding highlights",
+            progress=55,
+            timings=timings
+        )
+
+        selection_start = time.perf_counter()
 
         candidates = []
 
@@ -213,14 +333,20 @@ def analyse_video(job_id, video_path):
                     "transcript": item["text"]
                 })
 
-        # Use scene changes when speech is unavailable.
-        if not candidates:
+        # Only use scene detection for longer videos
+        # when speech-based highlights are unavailable.
+        if not candidates and duration >= 120:
             try:
                 scenes = detect_scenes(video_path)
 
                 for scene_start, scene_end in scenes:
-                    start = max(0, scene_start.get_seconds())
-                    end = min(duration, scene_end.get_seconds())
+                    start = max(
+                        0, scene_start.get_seconds()
+                    )
+
+                    end = min(
+                        duration, scene_end.get_seconds()
+                    )
 
                     if end > start:
                         candidates.append({
@@ -231,10 +357,13 @@ def analyse_video(job_id, video_path):
                         })
 
             except Exception:
-                pass
+                logger.exception(
+                    "Scene detection failed for job %s",
+                    job_id
+                )
 
-        # Fallback for videos without detected speech or scenes.
-        if not candidates and duration > 0:
+        # Fallback for short videos without speech.
+        if not candidates:
             candidates.append({
                 "start": 0,
                 "end": min(duration, 30),
@@ -262,23 +391,50 @@ def analyse_video(job_id, video_path):
             if len(selected) >= 5:
                 break
 
-        selected.sort(key=lambda item: item["start"])
+        selected.sort(
+            key=lambda item: item["start"]
+        )
 
+        timings["selection_seconds"] = round(
+            time.perf_counter() - selection_start, 2
+        )
+
+        if not selected:
+            raise Exception("No useful highlights found.")
+
+        # Export clips.
+        update_job(
+            job_id,
+            stage="Creating clips",
+            progress=65,
+            timings=timings
+        )
+
+        export_start = time.perf_counter()
         results = []
 
         for index, clip in enumerate(selected, start=1):
             output = OUTPUTS / f"{job_id}_clip_{index}.mp4"
 
+            clip_duration = clip["end"] - clip["start"]
+
+            if clip_duration <= 0:
+                continue
+
             subprocess.run(
                 [
-                    "ffmpeg", "-y",
+                    "ffmpeg",
+                    "-hide_banner",
+                    "-loglevel", "error",
+                    "-y",
                     "-ss", str(clip["start"]),
                     "-i", str(video_path),
-                    "-t", str(clip["end"] - clip["start"]),
+                    "-t", str(clip_duration),
                     "-threads", "1",
                     "-c:v", "libx264",
                     "-preset", "ultrafast",
                     "-crf", "23",
+                    "-pix_fmt", "yuv420p",
                     "-c:a", "aac",
                     "-movflags", "+faststart",
                     str(output)
@@ -290,6 +446,11 @@ def analyse_video(job_id, video_path):
                 timeout=600
             )
 
+            if not output.is_file() or output.stat().st_size == 0:
+                raise Exception(
+                    f"Clip {index} export produced an empty file."
+                )
+
             results.append({
                 "clip": index,
                 "start": round(clip["start"], 2),
@@ -299,19 +460,52 @@ def analyse_video(job_id, video_path):
                 "download": f"/clips/{output.name}"
             })
 
+            progress = 65 + int(
+                (index / len(selected)) * 30
+            )
+
+            update_job(
+                job_id,
+                stage=f"Exporting clip {index} of {len(selected)}",
+                progress=progress
+            )
+
+        timings["export_seconds"] = round(
+            time.perf_counter() - export_start, 2
+        )
+
         if not results:
             raise Exception("No clips could be generated.")
+
+        timings["total_seconds"] = round(
+            time.perf_counter() - started, 2
+        )
+
+        logger.info(
+            "Job %s completed. Timings: %s",
+            job_id,
+            timings
+        )
 
         update_job(
             job_id,
             status="completed",
-            clips=results
+            stage="Completed",
+            progress=100,
+            clips=results,
+            timings=timings
         )
 
     except Exception as error:
+        logger.exception(
+            "Processing failed for job %s",
+            job_id
+        )
+
         update_job(
             job_id,
             status="failed",
+            stage="Failed",
             error=str(error)
         )
 
@@ -324,7 +518,7 @@ def analyse_video(job_id, video_path):
 def home():
     return {
         "message": "VYRO CLIPS API is running",
-        "version": "2.0"
+        "version": "2.1"
     }
 
 
@@ -391,6 +585,7 @@ async def upload_video(video: UploadFile = File(...)):
 
     except Exception as error:
         video_path.unlink(missing_ok=True)
+
         raise HTTPException(
             status_code=500,
             detail=f"Upload failed: {str(error)}"
@@ -413,7 +608,10 @@ def job_status(job_id: str):
 
     response = {
         "status": job["status"],
-        "clips": json.loads(job["clips"])
+        "clips": json.loads(job["clips"]),
+        "stage": job["stage"],
+        "progress": job["progress"],
+        "timings": json.loads(job["timings"] or "{}")
     }
 
     if job["error"]:
