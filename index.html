@@ -66,10 +66,22 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 .status{font-size:12px;color:var(--cyan);margin-top:15px;line-height:1.7;overflow-wrap:anywhere}
 .clipcard{background:#181e2d;border:1px solid var(--line);padding:15px;border-radius:12px;margin-top:14px}
 .clipcard h4{margin-bottom:8px}
-.clipcard p{font-size:11px;color:var(--muted);margin-bottom:10px}
+.clipcard p{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6}
 .clipcard video{border-radius:8px}
 .download{display:inline-block;margin-top:12px;text-decoration:none}
 .small{font-size:10px;color:var(--muted);line-height:1.6}
+.textinput{width:100%;background:#0e1421;color:white;border:1px solid #39425b;border-radius:9px;padding:14px;font-size:13px;outline:none}
+.textinput:focus{border-color:var(--purple)}
+.textinput::placeholder{color:#69738b}
+.youtube-result{display:flex;gap:16px;align-items:flex-start;margin-top:18px;padding:15px;background:#181e2d;border:1px solid var(--line);border-radius:12px}
+.youtube-thumb{width:220px;max-width:40%;aspect-ratio:16/9;object-fit:cover;border-radius:9px;background:#080a12}
+.youtube-details{flex:1;min-width:0}
+.youtube-details h4{font-size:15px;line-height:1.5;margin-bottom:8px;overflow-wrap:anywhere}
+.youtube-details p{font-size:11px;color:var(--muted);line-height:1.7;overflow-wrap:anywhere}
+.youtube-details a{color:#b9a9ff;text-decoration:none;font-size:11px;display:inline-block;margin-top:10px}
+.youtube-details a:hover{text-decoration:underline}
+.status.error{color:#ff9292}
+.status.success{color:var(--cyan)}
 @media(max-width:800px){
 .sidebar{width:65px;padding:20px 8px}
 .logo{text-align:center;font-size:17px}
@@ -85,6 +97,8 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 .settings{grid-template-columns:1fr}
 .panel{padding:12px}
 .videoarea{min-height:180px}
+.youtube-result{display:block}
+.youtube-thumb{width:100%;max-width:100%;margin-bottom:13px}
 }
 </style>
 </head>
@@ -103,7 +117,7 @@ video{display:block;width:100%;max-height:520px;background:#050609}
  <div class="navtitle">TOOLS</div>
  <div class="nav">◉ <span>Captions</span></div>
  <div class="nav">⚙ <span>Settings</span></div>
- <div class="sidebottom">VYRO CLIPS<br>Creative Studio<br>Version 3.0</div>
+ <div class="sidebottom">VYRO CLIPS<br>Creative Studio<br>Version 3.1</div>
 </aside>
 
 <main class="main">
@@ -137,10 +151,50 @@ video{display:block;width:100%;max-height:520px;background:#050609}
  </div>
 </section>
 
-<div class="sectionhead"><h3>02 — Video preview</h3></div>
+<div class="sectionhead"><h3>02 — YouTube import</h3></div>
+<section class="panel">
+ <p class="small">Paste a public YouTube video, Shorts or supported Live link to inspect its information.</p>
+
+ <div style="margin-top:14px">
+  <input
+   class="textinput"
+   id="youtubeUrl"
+   type="url"
+   placeholder="https://www.youtube.com/watch?v=..."
+   autocomplete="url"
+  >
+ </div>
+
+ <div class="controls">
+  <button class="btn" id="inspectYoutubeBtn">▶ Inspect YouTube video</button>
+  <button class="btn secondary" id="clearYoutubeBtn">Clear</button>
+ </div>
+
+ <div class="status" id="youtubeStatus" aria-live="polite">
+  Paste a YouTube link and select Inspect.
+ </div>
+
+ <div class="youtube-result" id="youtubeResult" hidden>
+  <img class="youtube-thumb" id="youtubeThumbnail" alt="YouTube video thumbnail">
+  <div class="youtube-details">
+   <h4 id="youtubeTitle"></h4>
+   <p id="youtubeChannel"></p>
+   <p id="youtubeVideoId"></p>
+   <p id="youtubeLiveStatus"></p>
+   <p id="youtubeFootageStatus"></p>
+   <a id="youtubeOpenLink" href="#" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a>
+  </div>
+ </div>
+
+ <p class="note">
+  Current capability: VYRO retrieves public video information and thumbnails. This does not download YouTube footage, verify live status, read live chat or create clips from the link. To create clips, upload a video file that you own or are authorised to use.
+ </p>
+</section>
+
+<div class="sectionhead"><h3>03 — Video preview</h3></div>
 <section class="panel">
  <div class="videoarea" id="videoArea">
-  <div class="empty">Your video preview will appear here.</div>
+  <div class="empty">Your uploaded video preview will appear here.</div>
  </div>
  <div class="fileinfo">
   <span id="duration">Duration: --:--</span>
@@ -153,7 +207,7 @@ video{display:block;width:100%;max-height:520px;background:#050609}
  </div>
 </section>
 
-<div class="sectionhead"><h3>03 — Clip selection</h3></div>
+<div class="sectionhead"><h3>04 — Clip selection</h3></div>
 <section class="panel">
  <div class="timeline">
   <label>CLIP START TIME</label>
@@ -174,7 +228,7 @@ video{display:block;width:100%;max-height:520px;background:#050609}
  </div>
 </section>
 
-<div class="sectionhead"><h3>04 — Clip preferences</h3></div>
+<div class="sectionhead"><h3>05 — Clip preferences</h3></div>
 <section class="panel">
  <div class="settings">
   <div class="field">
@@ -223,7 +277,7 @@ video{display:block;width:100%;max-height:520px;background:#050609}
  <div class="status" id="status">Studio ready. Upload a video to start.</div>
 </section>
 
-<div class="sectionhead"><h3>05 — Your generated clips</h3></div>
+<div class="sectionhead"><h3>06 — Your generated clips</h3></div>
 <section class="panel" id="results">
  <p class="small" id="resultsMessage">Your finished clips will appear here after processing.</p>
  <div id="clipResults"></div>
@@ -233,7 +287,7 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 </div>
 
 <script>
-// VYRO CLIPS LIVE BACKEND
+// VYRO CLIPS BACKEND
 const API_BASE = "https://vyro-clips-1.onrender.com";
 
 const $ = id => document.getElementById(id);
@@ -273,6 +327,7 @@ function setControls(enabled) {
  ].forEach(id => $(id).disabled = !enabled);
 }
 
+// UPLOAD AND PREVIEW
 $("videoInput").addEventListener("change", e => {
  const file = e.target.files[0];
  if (!file) return;
@@ -389,6 +444,110 @@ $("previewClip").onclick = () => {
  };
 };
 
+// YOUTUBE VIDEO INSPECTOR
+function setYoutubeStatus(message, type) {
+ const status = $("youtubeStatus");
+ status.textContent = message;
+ status.className = "status" + (type ? " " + type : "");
+}
+
+function clearYoutubeResult() {
+ $("youtubeResult").hidden = true;
+ $("youtubeThumbnail").removeAttribute("src");
+ $("youtubeTitle").textContent = "";
+ $("youtubeChannel").textContent = "";
+ $("youtubeVideoId").textContent = "";
+ $("youtubeLiveStatus").textContent = "";
+ $("youtubeFootageStatus").textContent = "";
+ $("youtubeOpenLink").href = "#";
+}
+
+$("inspectYoutubeBtn").addEventListener("click", inspectYoutube);
+
+$("youtubeUrl").addEventListener("keydown", event => {
+ if (event.key === "Enter") inspectYoutube();
+});
+
+async function inspectYoutube() {
+ const input = $("youtubeUrl").value.trim();
+
+ if (!input) {
+  setYoutubeStatus("Paste a YouTube video or Live link first.", "error");
+  return;
+ }
+
+ const button = $("inspectYoutubeBtn");
+ button.disabled = true;
+ clearYoutubeResult();
+ setYoutubeStatus("Connecting to VYRO. Inspecting YouTube link...", "");
+
+ try {
+  const response = await fetch(API_BASE + "/youtube/inspect", {
+   method: "POST",
+   headers: {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+   },
+   body: JSON.stringify({url: input})
+  });
+
+  let data;
+  try {
+   data = await response.json();
+  } catch {
+   throw new Error("The server returned an unreadable response.");
+  }
+
+  if (!response.ok) {
+   const detail = typeof data.detail === "string"
+    ? data.detail
+    : "YouTube inspection failed. Check the link and try again.";
+   throw new Error(detail);
+  }
+
+  if (!data.ok) {
+   throw new Error(data.message || "Could not inspect this YouTube link.");
+  }
+
+  $("youtubeTitle").textContent = data.title || "Title unavailable";
+  $("youtubeChannel").textContent =
+   "Channel: " + (data.channel || "Unavailable");
+  $("youtubeVideoId").textContent =
+   "Video ID: " + (data.video_id || "Unavailable");
+  $("youtubeLiveStatus").textContent =
+   "Live status: " + (data.live_status || "Not checked") +
+   " | Live chat: " + (data.live_chat || "Not checked");
+  $("youtubeFootageStatus").textContent =
+   "Footage access: " + (data.footage_access || "Not provided");
+
+  if (data.thumbnail) {
+   $("youtubeThumbnail").src = data.thumbnail;
+  }
+
+  if (data.url) {
+   $("youtubeOpenLink").href = data.url;
+  }
+
+  $("youtubeResult").hidden = false;
+
+  setYoutubeStatus(
+   "YouTube information retrieved successfully. This link has not been converted into a video file.",
+   "success"
+  );
+
+ } catch (error) {
+  setYoutubeStatus("Error: " + error.message, "error");
+ } finally {
+  button.disabled = false;
+ }
+}
+
+$("clearYoutubeBtn").addEventListener("click", () => {
+ $("youtubeUrl").value = "";
+ clearYoutubeResult();
+ setYoutubeStatus("Paste a YouTube link and select Inspect.", "");
+});
+
 // AUTOMATIC VIDEO PROCESSING
 function wait(ms) {
  return new Promise(resolve => setTimeout(resolve, ms));
@@ -459,8 +618,14 @@ $("autoClipBtn").addEventListener("click", async () => {
     throw new Error(data.error || "Video processing failed.");
    }
 
+   let progressText = "";
+   if (Number.isFinite(Number(data.progress))) {
+    progressText = " | " + data.progress + "%";
+   }
+
    $("status").textContent =
-    "VYRO is analysing your video... Status: " + data.status;
+    "VYRO is analysing your video... Stage: " +
+    (data.stage || data.status) + progressText;
   }
 
  } catch (error) {
