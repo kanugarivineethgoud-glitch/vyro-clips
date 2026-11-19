@@ -4,122 +4,270 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VYRO CLIPS — AI Clipping Studio</title>
+<meta name="theme-color" content="#080a12">
+<title>VYRO CLIPS — AI Video Studio</title>
 <style>
+:root {
+ --bg:#080a12;--panel:#111522;--panel2:#181e2d;
+ --line:#293149;--text:#f5f6ff;--muted:#8d96ad;
+ --purple:#9475ff;--cyan:#5de4df;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Inter,Arial,sans-serif;background:#080a10;color:#f5f6fa}
-button,input{font:inherit}
+body{background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
 .app{display:flex;min-height:100vh}
-.sidebar{width:245px;background:#0e111b;border-right:1px solid #252a39;padding:26px 18px;flex-shrink:0}
-.logo{font-size:25px;font-weight:900;letter-spacing:2px;margin-bottom:8px}
-.logo span{color:#8b70ff}
-.tag{color:#777f95;font-size:10px;letter-spacing:3px;margin-bottom:42px}
-.navtitle{font-size:10px;color:#707991;margin:25px 10px 12px}
-.nav{padding:13px 12px;border-radius:10px;color:#aeb5c9;margin:5px 0;font-size:14px}
-.nav.active{background:#242044;color:#b6a4ff;border:1px solid #51418a}
-.sidebar-bottom{margin-top:55px;padding:15px;background:#191b2a;border-radius:12px;color:#aeb5c9;font-size:12px;line-height:1.8}
-.main{flex:1;min-width:0;padding:32px 4%;max-width:1500px;margin:auto}
-.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:38px}
-.top h1{font-size:27px}
-.muted{color:#858da2;font-size:13px;margin-top:8px}
-.avatar{border:1px solid #363b4e;padding:10px 14px;border-radius:12px;font-size:12px}
-.hero{background:linear-gradient(115deg,#1d1740,#171b31 55%,#111827);border:1px solid #51418a;border-radius:19px;padding:30px;margin-bottom:28px}
-.eyebrow{font-size:11px;letter-spacing:2px;color:#b7a5ff}
-.hero h2{font-size:clamp(25px,4vw,39px);margin:15px 0 10px}
-.hero p{color:#b4b8ca;font-size:14px;line-height:1.7;max-width:600px}
-.button{border:0;background:#9475ff;color:white;padding:13px 20px;border-radius:10px;font-weight:700;cursor:pointer;margin-top:22px}
-.button:hover{background:#aa91ff}
-.sectionhead{display:flex;justify-content:space-between;align-items:center;margin:30px 0 16px}
-.sectionhead h3{font-size:18px}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
-.card{background:#111521;border:1px solid #282e40;border-radius:15px;padding:19px}
-.card .symbol{font-size:24px;margin-bottom:14px}
-.card h4{font-size:14px;margin-bottom:8px}
-.card p{color:#8992a8;font-size:12px;line-height:1.6}
-.upload{border:1px dashed #6655a7;background:#121324;border-radius:17px;text-align:center;padding:42px 20px;cursor:pointer}
-.upload:hover{background:#19182e}
-.upload-icon{font-size:38px;margin-bottom:14px}
-.upload h3{font-size:17px;margin-bottom:9px}
-.upload p{font-size:12px;color:#929bb0;line-height:1.8}
-.upload input{display:none}
-.upload .button{display:inline-block}
-.formrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:20px}
-.field{background:#111521;border:1px solid #282e40;padding:17px;border-radius:13px}
-.field label{display:block;color:#aeb5c9;font-size:12px;margin-bottom:10px}
-.field select{width:100%;background:#202536;color:white;border:1px solid #383e51;padding:11px;border-radius:8px}
-.status{color:#929bb0;font-size:12px;margin-top:17px;line-height:1.7}
-@media(max-width:850px){.sidebar{width:75px;padding:20px 9px}.logo{font-size:17px;text-align:center}.tag,.navtitle,.nav span,.sidebar-bottom{display:none}.nav{text-align:center;font-size:18px;padding:15px 5px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:550px){.sidebar{width:57px}.main{padding:23px 13px}.top h1{font-size:22px}.grid,.formrow{grid-template-columns:1fr}.hero{padding:23px}.avatar{font-size:10px}}
+.sidebar{width:235px;flex-shrink:0;background:#0d111c;border-right:1px solid var(--line);padding:26px 17px}
+.logo{font-size:26px;font-weight:900;letter-spacing:2px}
+.logo span{color:var(--purple)}
+.tag{font-size:9px;color:var(--muted);letter-spacing:3px;margin:7px 0 40px}
+.navtitle{font-size:10px;color:#667089;margin:25px 10px 12px}
+.nav{padding:13px;border-radius:9px;color:#aeb6cb;font-size:13px;margin:5px 0}
+.nav.active{background:#272044;color:#c4b5ff;border:1px solid #51418a}
+.sidebottom{margin-top:50px;background:#181d2b;border-radius:12px;padding:15px;font-size:11px;color:#969fb5;line-height:1.8}
+.main{flex:1;min-width:0;padding:30px;max-width:1500px;margin:auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+.header h1{font-size:25px}
+.muted{color:var(--muted);font-size:12px;margin-top:7px}
+.avatar{padding:10px 13px;border:1px solid var(--line);border-radius:10px;font-size:11px}
+.hero{padding:25px;background:linear-gradient(115deg,#251c4c,#171d32);border:1px solid #51418a;border-radius:16px;margin-bottom:25px}
+.eyebrow{font-size:10px;letter-spacing:2px;color:#b9a9ff}
+.hero h2{font-size:30px;margin:13px 0 8px}
+.hero p{color:#bbc0d2;font-size:13px;line-height:1.7}
+.sectionhead{display:flex;justify-content:space-between;align-items:center;margin:25px 0 14px}
+.sectionhead h3{font-size:17px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px;margin-bottom:17px}
+.upload{border:1px dashed #6655a7;border-radius:13px;text-align:center;padding:32px 15px;background:#141526;cursor:pointer}
+.upload:hover{background:#1c1b35}
+.upload .symbol{font-size:35px;margin-bottom:12px}
+.upload h3{font-size:16px;margin-bottom:8px}
+.upload p{font-size:11px;color:var(--muted);line-height:1.8}
+.btn{border:0;border-radius:9px;padding:12px 17px;background:var(--purple);color:white;font-size:12px;font-weight:700}
+.btn:hover{filter:brightness(1.15)}
+.btn.secondary{background:#252d40;border:1px solid #39425b}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.upload .btn{margin-top:17px}
+input[type=file]{display:none}
+.videoarea{background:#07090e;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:240px}
+video{display:block;width:100%;max-height:520px;background:#050609}
+.empty{padding:45px;text-align:center;color:var(--muted);font-size:13px}
+.fileinfo{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:13px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.timeline{margin-top:18px}
+.timeline label{font-size:11px;color:#abb4c9;display:block;margin-bottom:9px}
+.range{width:100%;accent-color:var(--purple);cursor:pointer}
+.rangeinfo{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin:7px 0 17px}
+.settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.field{background:var(--panel2);padding:14px;border:1px solid var(--line);border-radius:10px}
+.field label{display:block;color:var(--muted);font-size:10px;margin-bottom:9px}
+.field select{width:100%;background:#0e1421;color:white;border:1px solid #343d53;border-radius:8px;padding:11px;font-size:12px}
+.note{font-size:11px;color:var(--muted);line-height:1.7;margin-top:15px}
+.status{font-size:12px;color:var(--cyan);margin-top:15px;line-height:1.6}
+@media(max-width:800px){.sidebar{width:65px;padding:20px 8px}.logo{text-align:center;font-size:17px}.tag,.navtitle,.nav span,.sidebottom{display:none}.nav{text-align:center;font-size:17px;padding:14px 3px}.main{padding:20px}}
+@media(max-width:520px){.sidebar{width:52px}.main{padding:15px 11px}.header h1{font-size:19px}.hero h2{font-size:25px}.settings{grid-template-columns:1fr}.panel{padding:12px}.videoarea{min-height:190px}}
 </style>
 </head>
 <body>
 <div class="app">
 <aside class="sidebar">
-<div class="logo">VYRO<span>.</span></div>
-<div class="tag">CLIPS STUDIO</div>
-<div class="navtitle">WORKSPACE</div>
-<div class="nav active">◫ <span>Dashboard</span></div>
-<div class="nav">✂ <span>AI Clips</span></div>
-<div class="nav">▤ <span>My Projects</span></div>
-<div class="nav">▣ <span>Templates</span></div>
-<div class="navtitle">TOOLS</div>
-<div class="nav">◉ <span>Captions</span></div>
-<div class="nav">▧ <span>Settings</span></div>
-<div class="sidebar-bottom">VYRO CLIPS<br>Creative Studio<br>Version 1.0</div>
+ <div class="logo">VYRO<span>.</span></div>
+ <div class="tag">CLIPS STUDIO</div>
+ <div class="navtitle">WORKSPACE</div>
+ <div class="nav active">◫ <span>Dashboard</span></div>
+ <div class="nav">✂ <span>AI Clips</span></div>
+ <div class="nav">▤ <span>My Projects</span></div>
+ <div class="nav">▣ <span>Templates</span></div>
+ <div class="navtitle">TOOLS</div>
+ <div class="nav">◉ <span>Captions</span></div>
+ <div class="nav">⚙ <span>Settings</span></div>
+ <div class="sidebottom">VYRO CLIPS<br>Creative Studio<br>Version 2.0</div>
 </aside>
+
 <main class="main">
-<header class="top">
-<div><h1>Creative Studio</h1><p class="muted">Your next great clip starts here.</p></div>
-<div class="avatar">✦ PRO STUDIO</div>
+<header class="header">
+ <div><h1>Creative Studio</h1><p class="muted">Your professional video clipping workspace.</p></div>
+ <div class="avatar">✦ VYRO STUDIO</div>
 </header>
 
 <section class="hero">
-<div class="eyebrow">✦ THE AI CLIPPING STUDIO</div>
-<h2>Long videos.<br>Short-form perfection.</h2>
-<p>Transform podcasts, interviews and gaming videos into engaging short clips with intelligent editing tools.</p>
-<button class="button" onclick="document.getElementById('video').click()">＋ Start creating</button>
+ <div class="eyebrow">✦ AI VIDEO CLIPPING PLATFORM</div>
+ <h2>Make every moment count.</h2>
+ <p>Upload your long videos, preview your footage and prepare short-form clips.</p>
 </section>
 
-<div class="sectionhead"><h3>Start creating</h3></div>
-<section class="upload" onclick="document.getElementById('video').click()">
-<div class="upload-icon">⇧</div>
-<h3 id="uploadTitle">Upload your video</h3>
-<p id="uploadInfo">Drop your video here or browse files<br>MP4, MOV and WEBM supported</p>
-<label class="button" for="video">Choose video</label>
-<input type="file" id="video" accept="video/*">
+<div class="sectionhead"><h3>01 — Import video</h3></div>
+<section class="panel">
+ <label class="upload" for="videoInput">
+  <div class="symbol">⇧</div>
+  <h3 id="uploadTitle">Drop your video here</h3>
+  <p id="uploadDesc">Select a video from your device<br>MP4, MOV, WEBM and other browser-supported formats</p>
+  <span class="btn">Choose video</span>
+ </label>
+ <input type="file" id="videoInput" accept="video/*">
+ <div class="fileinfo"><span id="fileName">No video selected</span><span id="fileSize"></span></div>
 </section>
 
-<div class="formrow">
-<div class="field"><label>CLIP STYLE</label>
-<select id="style"><option>Automatic — all content</option><option>Podcast & Interviews</option><option>Gaming Highlights</option><option>Educational Content</option><option>Commentary</option></select></div>
-<div class="field"><label>OUTPUT FORMAT</label>
-<select id="format"><option>9:16 — Shorts / Reels</option><option>16:9 — Landscape</option><option>1:1 — Square</option></select></div>
-<div class="field"><label>VIDEO QUALITY</label>
-<select id="quality"><option>1080p — Full HD</option><option>4K — Ultra HD</option></select></div>
-<div class="field"><label>CAPTIONS</label>
-<select id="captions"><option>Animated captions</option><option>Clean subtitles</option><option>No captions</option></select></div>
-</div>
-
-<div class="sectionhead"><h3>Studio tools</h3></div>
-<section class="grid">
-<div class="card"><div class="symbol">✂</div><h4>AI Clip Finder</h4><p>Identify interesting moments and potential highlights.</p></div>
-<div class="card"><div class="symbol">💬</div><h4>Smart Captions</h4><p>Create readable subtitles with professional styles.</p></div>
-<div class="card"><div class="symbol">◉</div><h4>Smart Reframe</h4><p>Prepare videos for vertical and horizontal screens.</p></div>
-<div class="card"><div class="symbol">🎮</div><h4>Gaming Highlights</h4><p>Dedicated highlight workflow for gaming footage.</p></div>
-<div class="card"><div class="symbol">🎙</div><h4>Podcast Clips</h4><p>Find compelling moments from conversations.</p></div>
-<div class="card"><div class="symbol">⬇</div><h4>HD Export</h4><p>Prepare high-resolution MP4 exports.</p></div>
+<div class="sectionhead"><h3>02 — Video preview</h3></div>
+<section class="panel">
+ <div class="videoarea" id="videoArea">
+  <div class="empty">Your video preview will appear here.</div>
+ </div>
+ <div class="fileinfo">
+  <span id="duration">Duration: --:--</span>
+  <span id="resolution">Resolution: --</span>
+ </div>
+ <div class="controls">
+  <button class="btn secondary" id="playBtn" disabled>▶ Play</button>
+  <button class="btn secondary" id="pauseBtn" disabled>Ⅱ Pause</button>
+  <button class="btn secondary" id="restartBtn" disabled>↺ Restart</button>
+ </div>
 </section>
-<p class="status" id="status">Studio ready. AI processing and export services will be connected in the next development stage.</p>
+
+<div class="sectionhead"><h3>03 — Select your clip</h3></div>
+<section class="panel">
+ <div class="timeline">
+  <label>CLIP START TIME</label>
+  <input class="range" id="startRange" type="range" min="0" max="100" value="0" disabled>
+  <div class="rangeinfo"><span id="startText">00:00</span><span>Start position</span></div>
+  <label>CLIP END TIME</label>
+  <input class="range" id="endRange" type="range" min="0" max="100" value="100" disabled>
+  <div class="rangeinfo"><span id="endText">00:00</span><span>End position</span></div>
+ </div>
+ <div class="field">
+  <label>SELECTED CLIP LENGTH</label>
+  <div id="clipLength">Upload a video to begin.</div>
+ </div>
+ <div class="controls">
+  <button class="btn secondary" id="previewClip" disabled>▶ Preview selection</button>
+  <button class="btn secondary" id="setStart" disabled>Set start at current time</button>
+  <button class="btn secondary" id="setEnd" disabled>Set end at current time</button>
+ </div>
+</section>
+
+<div class="sectionhead"><h3>04 — Clip preferences</h3></div>
+<section class="panel">
+ <div class="settings">
+  <div class="field"><label>CONTENT TYPE</label>
+   <select id="style">
+    <option>Automatic</option><option>Podcast / Interview</option><option>Gaming</option><option>Education</option><option>Commentary</option>
+   </select>
+  </div>
+  <div class="field"><label>ASPECT RATIO</label>
+   <select id="ratio"><option>9:16 Vertical</option><option>16:9 Landscape</option><option>1:1 Square</option>
+   </select>
+  </div>
+  <div class="field"><label>OUTPUT QUALITY</label>
+   <select id="quality"><option>1080p Full HD</option><option>4K Ultra HD</option>
+   </select>
+  </div>
+  <div class="field"><label>CAPTION STYLE</label>
+   <select id="caption"><option>Animated captions</option><option>Clean subtitles</option><option>No captions</option>
+   </select>
+  </div>
+ </div>
+ <p class="note">Your selected settings are preparation preferences. AI processing, automatic captions and final MP4 rendering will be connected through the processing backend.</p>
+ <div class="status" id="status">Studio ready. Upload a video to start.</div>
+</section>
+
 </main>
 </div>
+
 <script>
-const video=document.getElementById('video');
-video.addEventListener('change',()=>{
- const file=video.files[0];
+const $=id=>document.getElementById(id);
+let video=null;
+let videoURL=null;
+let total=0;
+
+function time(t){
+ if(!Number.isFinite(t))return "00:00";
+ let m=Math.floor(t/60),s=Math.floor(t%60);
+ return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+}
+function updateSelection(){
+ if(!video||!total)return;
+ let start=Number($("startRange").value);
+ let end=Number($("endRange").value);
+ if(start>=end){
+  end=Math.min(total,start+1);
+  $("endRange").value=end;
+ }
+ $("startText").textContent=time(start);
+ $("endText").textContent=time(end);
+ $("clipLength").textContent=time(end-start);
+}
+function setControls(enabled){
+ ["playBtn","pauseBtn","restartBtn","previewClip","setStart","setEnd","startRange","endRange"].forEach(id=>$(id).disabled=!enabled);
+}
+$("videoInput").addEventListener("change",e=>{
+ const file=e.target.files[0];
  if(!file)return;
- document.getElementById('uploadTitle').textContent=file.name;
- document.getElementById('uploadInfo').textContent=(file.size/1024/1024).toFixed(1)+' MB · Video selected';
- document.getElementById('status').textContent='Video selected successfully. AI processing is not connected yet.';
+ if(!file.type.startsWith("video/")){
+  $("status").textContent="Please select a valid video file.";
+  return;
+ }
+ if(videoURL)URL.revokeObjectURL(videoURL);
+ videoURL=URL.createObjectURL(file);
+ $("videoArea").innerHTML="";
+ video=document.createElement("video");
+ video.src=videoURL;
+ video.controls=true;
+ video.playsInline=true;
+ video.preload="metadata";
+ $("videoArea").appendChild(video);
+ $("uploadTitle").textContent=file.name;
+ $("uploadDesc").textContent="Video selected successfully. Preview loading...";
+ $("fileName").textContent=file.name;
+ $("fileSize").textContent=(file.size/1024/1024).toFixed(2)+" MB";
+ $("status").textContent="Loading video information...";
+ setControls(false);
+ video.addEventListener("loadedmetadata",()=>{
+  total=video.duration;
+  $("duration").textContent="Duration: "+time(total);
+  $("resolution").textContent="Resolution: "+video.videoWidth+" × "+video.videoHeight;
+  $("startRange").max=total;
+  $("endRange").max=total;
+  $("startRange").value=0;
+  $("endRange").value=total;
+  updateSelection();
+  setControls(true);
+  $("uploadDesc").textContent="Video ready for preview and clip selection.";
+  $("status").textContent="Video loaded. Select the clip section you want to preview.";
+ });
+ video.addEventListener("error",()=>{
+  $("status").textContent="This video format could not be previewed by your browser.";
+ });
+});
+$("playBtn").onclick=()=>video?.play();
+$("pauseBtn").onclick=()=>video?.pause();
+$("restartBtn").onclick=()=>{if(video){video.currentTime=0;video.play();}};
+$("startRange").addEventListener("input",()=>{
+ updateSelection();
+ if(video)video.currentTime=Number($("startRange").value);
+});
+$("endRange").addEventListener("input",updateSelection);
+$("setStart").onclick=()=>{
+ if(video){$("startRange").value=Math.min(video.currentTime,Number($("endRange").value)-1);updateSelection();}
+};
+$("setEnd").onclick=()=>{
+ if(video){$("endRange").value=Math.max(video.currentTime,Number($("startRange").value)+1);updateSelection();}
+};
+$("previewClip").onclick=()=>{
+ if(!video)return;
+ let start=Number($("startRange").value);
+ let end=Number($("endRange").value);
+ if(end<=start){$("status").textContent="Choose a valid clip range.";return;}
+ video.currentTime=start;
+ video.play();
+ $("status").textContent="Previewing selected section.";
+ video.ontimeupdate=()=>{
+  if(video.currentTime>=end){
+   video.pause();
+   video.ontimeupdate=null;
+  }
+ };
+};
+window.addEventListener("beforeunload",()=>{
+ if(videoURL)URL.revokeObjectURL(videoURL);
 });
 </script>
 </body>
