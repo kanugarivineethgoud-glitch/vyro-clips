@@ -11,7 +11,7 @@
 :root{
 --bg:#080a12;--panel:#111522;--panel2:#181e2d;
 --line:#293149;--text:#f5f6ff;--muted:#8d96ad;
---purple:#9475ff;--cyan:#5de4df;
+--purple:#9475ff;--cyan:#5de4df;--red:#ff6969;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
@@ -64,6 +64,8 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 .field select{width:100%;background:#0e1421;color:white;border:1px solid #343d53;border-radius:8px;padding:11px;font-size:12px}
 .note{font-size:11px;color:var(--muted);line-height:1.7;margin-top:15px}
 .status{font-size:12px;color:var(--cyan);margin-top:15px;line-height:1.7;overflow-wrap:anywhere}
+.status.error{color:#ff9292}
+.status.success{color:var(--cyan)}
 .clipcard{background:#181e2d;border:1px solid var(--line);padding:15px;border-radius:12px;margin-top:14px}
 .clipcard h4{margin-bottom:8px}
 .clipcard p{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6}
@@ -80,8 +82,16 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 .youtube-details p{font-size:11px;color:var(--muted);line-height:1.7;overflow-wrap:anywhere}
 .youtube-details a{color:#b9a9ff;text-decoration:none;font-size:11px;display:inline-block;margin-top:10px}
 .youtube-details a:hover{text-decoration:underline}
-.status.error{color:#ff9292}
-.status.success{color:var(--cyan)}
+.live-panel{margin-top:16px;padding:16px;background:#101a22;border:1px solid #28504f;border-radius:12px}
+.live-heading{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);display:inline-block}
+.live-heading h4{font-size:13px}
+.live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.live-stat{background:#151f2b;border:1px solid #2a394a;border-radius:9px;padding:12px;min-width:0}
+.live-stat span{display:block;color:var(--muted);font-size:10px;margin-bottom:7px}
+.live-stat strong{font-size:13px;overflow-wrap:anywhere}
+.live-message{font-size:11px;color:#aeb8ca;line-height:1.7;margin-top:12px}
+.live-message.warning{color:#ffd28b}
 @media(max-width:800px){
 .sidebar{width:65px;padding:20px 8px}
 .logo{text-align:center;font-size:17px}
@@ -99,6 +109,7 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 .videoarea{min-height:180px}
 .youtube-result{display:block}
 .youtube-thumb{width:100%;max-width:100%;margin-bottom:13px}
+.live-grid{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -117,7 +128,7 @@ video{display:block;width:100%;max-height:520px;background:#050609}
  <div class="navtitle">TOOLS</div>
  <div class="nav">◉ <span>Captions</span></div>
  <div class="nav">⚙ <span>Settings</span></div>
- <div class="sidebottom">VYRO CLIPS<br>Creative Studio<br>Version 3.1</div>
+ <div class="sidebottom">VYRO CLIPS<br>Creative Studio<br>Version 3.2</div>
 </aside>
 
 <main class="main">
@@ -151,27 +162,24 @@ video{display:block;width:100%;max-height:520px;background:#050609}
  </div>
 </section>
 
-<div class="sectionhead"><h3>02 — YouTube import</h3></div>
+<div class="sectionhead"><h3>02 — YouTube import & LivePulse</h3></div>
 <section class="panel">
- <p class="small">Paste a public YouTube video, Shorts or supported Live link to inspect its information.</p>
+ <p class="small">Paste a public YouTube video, Shorts or Live link to inspect its information and check its live status.</p>
 
  <div style="margin-top:14px">
-  <input
-   class="textinput"
-   id="youtubeUrl"
-   type="url"
+  <input class="textinput" id="youtubeUrl" type="url"
    placeholder="https://www.youtube.com/watch?v=..."
-   autocomplete="url"
-  >
+   autocomplete="url">
  </div>
 
  <div class="controls">
   <button class="btn" id="inspectYoutubeBtn">▶ Inspect YouTube video</button>
+  <button class="btn secondary" id="checkLiveBtn">● Check Live Status</button>
   <button class="btn secondary" id="clearYoutubeBtn">Clear</button>
  </div>
 
  <div class="status" id="youtubeStatus" aria-live="polite">
-  Paste a YouTube link and select Inspect.
+  Paste a YouTube link and choose an action.
  </div>
 
  <div class="youtube-result" id="youtubeResult" hidden>
@@ -186,8 +194,46 @@ video{display:block;width:100%;max-height:520px;background:#050609}
   </div>
  </div>
 
+ <div class="live-panel" id="livePanel" hidden>
+  <div class="live-heading">
+   <span class="live-dot" id="liveDot"></span>
+   <h4 id="liveHeading">LivePulse results</h4>
+  </div>
+
+  <div class="live-grid">
+   <div class="live-stat">
+    <span>STREAM STATUS</span>
+    <strong id="liveState">Not checked</strong>
+   </div>
+   <div class="live-stat">
+    <span>CONCURRENT VIEWERS</span>
+    <strong id="liveViewers">Unavailable</strong>
+   </div>
+   <div class="live-stat">
+    <span>LIVE CHAT</span>
+    <strong id="liveChat">Not checked</strong>
+   </div>
+   <div class="live-stat">
+    <span>CHAT MESSAGES</span>
+    <strong id="liveMessages">Not connected</strong>
+   </div>
+   <div class="live-stat">
+    <span>ACTUAL START</span>
+    <strong id="liveActualStart">Unavailable</strong>
+   </div>
+   <div class="live-stat">
+    <span>SCHEDULED START</span>
+    <strong id="liveScheduledStart">Unavailable</strong>
+   </div>
+  </div>
+
+  <p class="live-message" id="liveExplanation">
+   Live status information will appear here.
+  </p>
+ </div>
+
  <p class="note">
-  Current capability: VYRO retrieves public video information and thumbnails. This does not download YouTube footage, verify live status, read live chat or create clips from the link. To create clips, upload a video file that you own or are authorised to use.
+  LivePulse uses YouTube Data API information to check stream status and whether chat is available. It does not currently read chat messages or retrieve stream footage. To create clips, upload a video file that you own or are authorised to use.
  </p>
 </section>
 
@@ -287,7 +333,6 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 </div>
 
 <script>
-// VYRO CLIPS BACKEND
 const API_BASE = "https://vyro-clips-1.onrender.com";
 
 const $ = id => document.getElementById(id);
@@ -298,10 +343,25 @@ let total = 0;
 let currentJob = null;
 
 function time(t) {
- if (!Number.isFinite(t)) return "00:00";
- const m = Math.floor(t / 60);
- const s = Math.floor(t % 60);
- return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+ if (!Number.isFinite(Number(t))) return "Unavailable";
+ const seconds = Number(t);
+ const h = Math.floor(seconds / 3600);
+ const m = Math.floor((seconds % 3600) / 60);
+ const s = Math.floor(seconds % 60);
+ if (h > 0) {
+  return String(h).padStart(2,"0") + ":" +
+   String(m).padStart(2,"0") + ":" +
+   String(s).padStart(2,"0");
+ }
+ return String(m).padStart(2,"0") + ":" +
+  String(s).padStart(2,"0");
+}
+
+function formatDate(value) {
+ if (!value) return "Unavailable";
+ const date = new Date(value);
+ if (Number.isNaN(date.getTime())) return "Unavailable";
+ return date.toLocaleString();
 }
 
 function updateSelection() {
@@ -327,7 +387,7 @@ function setControls(enabled) {
  ].forEach(id => $(id).disabled = !enabled);
 }
 
-// UPLOAD AND PREVIEW
+// VIDEO UPLOAD AND PREVIEW
 $("videoInput").addEventListener("change", e => {
  const file = e.target.files[0];
  if (!file) return;
@@ -444,7 +504,7 @@ $("previewClip").onclick = () => {
  };
 };
 
-// YOUTUBE VIDEO INSPECTOR
+// YOUTUBE RESULT HELPERS
 function setYoutubeStatus(message, type) {
  const status = $("youtubeStatus");
  status.textContent = message;
@@ -462,6 +522,55 @@ function clearYoutubeResult() {
  $("youtubeOpenLink").href = "#";
 }
 
+function clearLiveResult() {
+ $("livePanel").hidden = true;
+ $("liveState").textContent = "Not checked";
+ $("liveViewers").textContent = "Unavailable";
+ $("liveChat").textContent = "Not checked";
+ $("liveMessages").textContent = "Not connected";
+ $("liveActualStart").textContent = "Unavailable";
+ $("liveScheduledStart").textContent = "Unavailable";
+ $("liveExplanation").textContent = "";
+ $("liveHeading").textContent = "LivePulse results";
+ $("liveDot").style.background = "var(--cyan)";
+}
+
+// SHARED YOUTUBE REQUEST
+async function youtubeRequest(endpoint, url) {
+ const response = await fetch(API_BASE + endpoint, {
+  method: "POST",
+  headers: {
+   "Content-Type": "application/json",
+   "Accept": "application/json"
+  },
+  body: JSON.stringify({url})
+ });
+
+ let data;
+ try {
+  data = await response.json();
+ } catch {
+  throw new Error("The server returned an unreadable response.");
+ }
+
+ if (!response.ok) {
+  let message = "Request failed. Please try again.";
+  if (typeof data.detail === "string") {
+   message = data.detail;
+  } else if (Array.isArray(data.detail)) {
+   message = data.detail.map(item => item.msg || "Invalid input").join(", ");
+  }
+  throw new Error(message);
+ }
+
+ if (data.ok === false) {
+  throw new Error(data.message || "The request could not be completed.");
+ }
+
+ return data;
+}
+
+// YOUTUBE INSPECTOR
 $("inspectYoutubeBtn").addEventListener("click", inspectYoutube);
 
 $("youtubeUrl").addEventListener("keydown", event => {
@@ -479,35 +588,11 @@ async function inspectYoutube() {
  const button = $("inspectYoutubeBtn");
  button.disabled = true;
  clearYoutubeResult();
+ clearLiveResult();
  setYoutubeStatus("Connecting to VYRO. Inspecting YouTube link...", "");
 
  try {
-  const response = await fetch(API_BASE + "/youtube/inspect", {
-   method: "POST",
-   headers: {
-    "Content-Type": "application/json",
-    "Accept": "application/json"
-   },
-   body: JSON.stringify({url: input})
-  });
-
-  let data;
-  try {
-   data = await response.json();
-  } catch {
-   throw new Error("The server returned an unreadable response.");
-  }
-
-  if (!response.ok) {
-   const detail = typeof data.detail === "string"
-    ? data.detail
-    : "YouTube inspection failed. Check the link and try again.";
-   throw new Error(detail);
-  }
-
-  if (!data.ok) {
-   throw new Error(data.message || "Could not inspect this YouTube link.");
-  }
+  const data = await youtubeRequest("/youtube/inspect", input);
 
   $("youtubeTitle").textContent = data.title || "Title unavailable";
   $("youtubeChannel").textContent =
@@ -531,7 +616,7 @@ async function inspectYoutube() {
   $("youtubeResult").hidden = false;
 
   setYoutubeStatus(
-   "YouTube information retrieved successfully. This link has not been converted into a video file.",
+   "YouTube information retrieved successfully. Use Check Live Status for a live-stream check.",
    "success"
   );
 
@@ -542,10 +627,113 @@ async function inspectYoutube() {
  }
 }
 
+// LIVEPULSE STATUS CHECK
+$("checkLiveBtn").addEventListener("click", checkLiveStatus);
+
+async function checkLiveStatus() {
+ const input = $("youtubeUrl").value.trim();
+
+ if (!input) {
+  setYoutubeStatus("Paste a YouTube Live or video link first.", "error");
+  return;
+ }
+
+ const button = $("checkLiveBtn");
+ button.disabled = true;
+ clearLiveResult();
+ $("livePanel").hidden = false;
+ $("liveHeading").textContent = "Checking YouTube live status...";
+ $("liveExplanation").textContent =
+  "VYRO is requesting live information from YouTube Data API.";
+
+ try {
+  const data = await youtubeRequest("/youtube/live-status", input);
+
+  const state = (data.live_status || "unknown").toLowerCase();
+
+  let stateLabel = "Unknown";
+  if (state === "live") stateLabel = "🔴 LIVE NOW";
+  else if (state === "upcoming") stateLabel = "UPCOMING";
+  else if (state === "not_live") stateLabel = "NOT LIVE";
+
+  $("liveState").textContent = stateLabel;
+
+  const viewers = data.concurrent_viewers;
+  $("liveViewers").textContent =
+   viewers !== null && viewers !== undefined
+    ? Number(viewers).toLocaleString()
+    : "Unavailable";
+
+  $("liveChat").textContent =
+   data.live_chat_available === true ? "Available" :
+   data.live_chat_available === false ? "Not available" :
+   "Unknown";
+
+  $("liveMessages").textContent =
+   data.live_chat_messages === "not_read"
+    ? "Not being read"
+    : (data.live_chat_messages || "Not connected");
+
+  $("liveActualStart").textContent =
+   formatDate(data.actual_start_time);
+
+  $("liveScheduledStart").textContent =
+   formatDate(data.scheduled_start_time);
+
+  $("liveHeading").textContent =
+   state === "live" ? "LivePulse — Stream is live" :
+   state === "upcoming" ? "LivePulse — Upcoming stream" :
+   state === "not_live" ? "LivePulse — Stream is not live" :
+   "LivePulse — Status checked";
+
+  $("liveDot").style.background =
+   state === "live" ? "var(--red)" : "var(--cyan)";
+
+  $("liveExplanation").textContent =
+   (data.message || "Live status check completed.") +
+   " Chat availability does not mean VYRO can read chat messages.";
+
+  $("livePanel").hidden = false;
+
+  // Update the video information card too, if it exists.
+  if (data.title) {
+   $("youtubeTitle").textContent = data.title;
+   $("youtubeChannel").textContent =
+    "Channel: " + (data.channel || "Unavailable");
+   $("youtubeVideoId").textContent =
+    "Video ID: " + (data.video_id || "Unavailable");
+   $("youtubeLiveStatus").textContent =
+    "Live status: " + stateLabel +
+    " | Live chat: " +
+    (data.live_chat_available ? "Available" : "Not available");
+   $("youtubeFootageStatus").textContent =
+    "Footage access: " + (data.footage_access || "Not provided");
+   $("youtubeOpenLink").href =
+    data.url || $("youtubeOpenLink").href;
+   $("youtubeResult").hidden = false;
+  }
+
+  setYoutubeStatus(
+   "LivePulse check completed successfully.",
+   "success"
+  );
+
+ } catch (error) {
+  $("liveHeading").textContent = "LivePulse check failed";
+  $("liveExplanation").textContent = error.message;
+  $("livePanel").hidden = false;
+  setYoutubeStatus("LivePulse error: " + error.message, "error");
+ } finally {
+  button.disabled = false;
+ }
+}
+
+// CLEAR YOUTUBE
 $("clearYoutubeBtn").addEventListener("click", () => {
  $("youtubeUrl").value = "";
  clearYoutubeResult();
- setYoutubeStatus("Paste a YouTube link and select Inspect.", "");
+ clearLiveResult();
+ setYoutubeStatus("Paste a YouTube link and choose an action.", "");
 });
 
 // AUTOMATIC VIDEO PROCESSING
