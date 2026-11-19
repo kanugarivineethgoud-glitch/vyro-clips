@@ -9,18 +9,22 @@ import uuid
 
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse, parse_qs, urlencode
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from faster_whisper import WhisperModel
 from scenedetect import open_video, SceneManager
 from scenedetect.detectors import ContentDetector
 
 
 # ==========================================
-# VYRO CLIPS 2.2
-# AI HIGHLIGHT INTELLIGENCE ENGINE
+# VYRO CLIPS 2.3
+# AI HIGHLIGHT ENGINE + YOUTUBE INSPECTOR
 # ==========================================
 
 logging.basicConfig(level=logging.INFO)
@@ -48,6 +52,206 @@ MAX_CLIPS = 5
 
 executor = ThreadPoolExecutor(max_workers=1)
 whisper_model = None
+
+
+# ==========================================
+# YOUTUBE INSPECTOR
+# ==========================================
+
+class YouTubeInspectRequest(BaseModel):
+    url: str
+
+
+YOUTUBE_HOSTS = {
+    "youtube.com",
+    "www.youtube.com",
+    "m.youtube.com",
+    "youtu.be",
+    "youtube-nocookie.com",
+    "www.youtube-nocookie.com",
+}
+
+VIDEO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
+
+
+def extract_youtube_video_id(raw_url):
+    """
+    Accept supported YouTube video URL formats.
+    Reject unrelated domains and non-video URLs.
+    """
+
+    if not isinstance(raw_url, str) or not raw_url.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide a YouTube video URL."
+        )
+
+    raw_url = raw_url.strip()
+
+    if len(raw_url) > 2048:
+        raise HTTPException(
+            status_code=400,
+            detail="The supplied URL is too long."
+        )
+
+    try:
+        parsed = urlparse(raw_url)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid URL."
+        )
+
+    if parsed.scheme.lower() != "https":
+        raise HTTPException(
+            status_code=400,
+            detail="Please use a secure HTTPS YouTube URL."
+        )
+
+    if parsed.username or parsed.password or parsed.port:
+        raise HTTPException(
+            status_code=400,
+            detail="This YouTube URL format is not supported."
+        )
+
+    host = (parsed.hostname or "").lower()
+
+    if host not in YOUTUBE_HOSTS:
+        raise HTTPException(
+            status_code=400,
+            detail="Only supported YouTube URLs are accepted."
+        )
+
+    video_id = None
+    path_parts = [
+        part for part in parsed.path.split("/")
+        if part
+    ]
+
+    if host == "youtu.be":
+        if path_parts:
+            video_id = path_parts[0]
+
+    else:
+        if parsed.path == "/watch":
+            values = parse_qs(parsed.query)
+            video_id = values.get("v", [None])[0]
+
+        elif len(path_parts) >= 2 and path_parts[0] in {
+            "shorts",
+            "live",
+            "embed",
+            "v",
+        }:
+            video_id = path_parts[1]
+
+    if not video_id or not VIDEO_ID_PATTERN.fullmatch(video_id):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Could not identify a valid video ID. "
+                "Please provide a YouTube video, Shorts, "
+                "or supported live-video URL."
+            )
+        )
+
+    return video_id
+
+
+def fetch_youtube_metadata(video_id):
+    """
+    Retrieve public YouTube metadata through oEmbed.
+    This does not download video or stream content.
+    """
+
+    canonical_url = (
+        "https://www.youtube.com/watch?"
+        + urlencode({"v": video_id})
+    )
+
+    oembed_url = (
+        "https://www.youtube.com/oembed?"
+        + urlencode({
+            "url": canonical_url,
+            "format": "json"
+        })
+    )
+
+    request = Request(
+        oembed_url,
+        headers={
+            "User-Agent": "VYRO-CLIPS/2.3"
+        }
+    )
+
+    try:
+        with urlopen(request, timeout=12) as response:
+            payload = json.loads(
+                response.read(1024 * 1024).decode("utf-8")
+            )
+
+    except HTTPError as error:
+        if error.code in (400, 401, 403, 404):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "YouTube could not provide public information "
+                    "for this video. It may be private, unavailable, "
+                    "restricted, or unsupported."
+                )
+            )
+
+        logger.warning(
+            "YouTube oEmbed returned HTTP %s",
+            error.code
+        )
+
+        raise HTTPException(
+            status_code=502,
+            detail="YouTube metadata service returned an error."
+        )
+
+    except (URLError, TimeoutError):
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Could not reach YouTube right now. "
+                "Please try again later."
+            )
+        )
+
+    except (ValueError, UnicodeDecodeError):
+        raise HTTPException(
+            status_code=502,
+            detail="YouTube returned an invalid metadata response."
+        )
+
+    except Exception:
+        logger.exception("YouTube metadata request failed")
+
+        raise HTTPException(
+            status_code=502,
+            detail="YouTube metadata lookup failed."
+        )
+
+    return {
+        "ok": True,
+        "provider": "YouTube",
+        "video_id": video_id,
+        "url": canonical_url,
+        "title": payload.get("title"),
+        "channel": payload.get("author_name"),
+        "channel_url": payload.get("author_url"),
+        "thumbnail": payload.get("thumbnail_url"),
+        "live_status": "unknown",
+        "live_chat": "not_checked",
+        "footage_access": "not_provided",
+        "message": (
+            "Public video information retrieved. "
+            "Live status and live chat have not been checked. "
+            "This endpoint does not retrieve video footage."
+        )
+    }
 
 
 # ==========================================
@@ -351,7 +555,6 @@ def score_highlight(transcript, relevant, window_duration):
 
     score = 1.0
 
-    # 1. Strong attention signals.
     strong = count_phrases(
         text,
         STRONG_PHRASES
@@ -359,7 +562,6 @@ def score_highlight(transcript, relevant, window_duration):
 
     score += min(strong, 3) * 2.5
 
-    # 2. Storytelling and narrative.
     storytelling = count_phrases(
         text,
         STORY_PHRASES
@@ -367,7 +569,6 @@ def score_highlight(transcript, relevant, window_duration):
 
     score += min(storytelling, 4) * 2.0
 
-    # 3. Educational and useful information.
     educational = count_phrases(
         text,
         EDUCATIONAL_PHRASES
@@ -375,7 +576,6 @@ def score_highlight(transcript, relevant, window_duration):
 
     score += min(educational, 4) * 1.8
 
-    # 4. Emotion-related language.
     emotions = count_phrases(
         text,
         EMOTION_WORDS
@@ -383,14 +583,12 @@ def score_highlight(transcript, relevant, window_duration):
 
     score += min(emotions, 4) * 1.2
 
-    # 5. Questions and exclamations.
     questions = transcript.count("?")
     exclamations = transcript.count("!")
 
     score += min(questions, 3) * 0.7
     score += min(exclamations, 3) * 0.7
 
-    # 6. Speech density.
     spoken_seconds = sum(
         max(0, item["end"] - item["start"])
         for item in relevant
@@ -403,7 +601,6 @@ def score_highlight(transcript, relevant, window_duration):
 
     score += speech_ratio * 2
 
-    # 7. Prefer meaningful transcript length.
     word_count = len(words)
 
     if 25 <= word_count <= 110:
@@ -415,7 +612,6 @@ def score_highlight(transcript, relevant, window_duration):
     elif word_count < 8:
         score -= 2
 
-    # 8. Vocabulary variety.
     unique_ratio = (
         len(set(words)) / max(word_count, 1)
     )
@@ -426,7 +622,6 @@ def score_highlight(transcript, relevant, window_duration):
     elif unique_ratio < 0.25:
         score -= 1.5
 
-    # 9. Filler-word penalty.
     filler_count = sum(
         len(
             re.findall(
@@ -444,7 +639,6 @@ def score_highlight(transcript, relevant, window_duration):
     if filler_ratio > 0.15:
         score -= 1.5
 
-    # 10. Avoid extremely short fragments.
     if window_duration < 8:
         score -= 2
 
@@ -458,7 +652,6 @@ def build_candidates(speech, duration):
     if not speech:
         return candidates
 
-    # Automatically choose a suitable target duration.
     target_length = min(
         35,
         max(12, duration * 0.32)
@@ -495,7 +688,6 @@ def build_candidates(speech, duration):
     ):
         starts.append(final_start)
 
-    # Evaluate each window in context.
     for window_start in starts:
 
         window_end = min(
@@ -529,7 +721,6 @@ def build_candidates(speech, duration):
         first_speech = relevant[0]["start"]
         last_speech = relevant[-1]["end"]
 
-        # Preserve a little context around speech.
         clip_start = max(
             window_start,
             first_speech - 1.5
@@ -540,7 +731,6 @@ def build_candidates(speech, duration):
             last_speech + 1.5
         )
 
-        # Avoid excessively short clips.
         if clip_end - clip_start < 10:
             clip_start = window_start
             clip_end = window_end
@@ -603,7 +793,6 @@ def select_best_candidates(candidates):
                 overlaps = True
                 break
 
-            # Keep a small gap between clips.
             if (
                 candidate["start"] < existing["end"] + 2
                 and candidate["end"] > existing["start"] - 2
@@ -652,10 +841,6 @@ def analyse_video(job_id, video_path):
             video_path
         )
 
-        # ----------------------------------
-        # LOAD AI MODEL
-        # ----------------------------------
-
         model_start = time.perf_counter()
 
         model = get_whisper()
@@ -664,10 +849,6 @@ def analyse_video(job_id, video_path):
             time.perf_counter() - model_start,
             2
         )
-
-        # ----------------------------------
-        # TRANSCRIBE
-        # ----------------------------------
 
         update_job(
             job_id,
@@ -713,10 +894,6 @@ def analyse_video(job_id, video_path):
             timings["transcription_seconds"]
         )
 
-        # ----------------------------------
-        # HIGHLIGHT SELECTION
-        # ----------------------------------
-
         update_job(
             job_id,
             stage="Finding interesting moments",
@@ -731,8 +908,6 @@ def analyse_video(job_id, video_path):
             duration
         )
 
-        # Use scene detection for longer videos
-        # only when no speech candidates exist.
         if not candidates and duration >= 120:
 
             try:
@@ -775,7 +950,6 @@ def analyse_video(job_id, video_path):
                     job_id
                 )
 
-        # Last-resort fallback.
         if not candidates:
 
             candidates.append({
@@ -805,10 +979,6 @@ def analyse_video(job_id, video_path):
             len(candidates),
             len(selected)
         )
-
-        # ----------------------------------
-        # EXPORT CLIPS
-        # ----------------------------------
 
         update_job(
             job_id,
@@ -902,10 +1072,6 @@ def analyse_video(job_id, video_path):
                 "No clips could be generated."
             )
 
-        # ----------------------------------
-        # COMPLETE JOB
-        # ----------------------------------
-
         timings["total_seconds"] = round(
             time.perf_counter() - started,
             2
@@ -950,9 +1116,24 @@ def home():
 
     return {
         "message": "VYRO CLIPS API is running",
-        "version": "2.2",
-        "engine": "VYRO AI Highlight Intelligence"
+        "version": "2.3",
+        "engine": (
+            "VYRO AI Highlight Intelligence "
+            "+ YouTube Inspector"
+        )
     }
+
+
+@app.post("/youtube/inspect")
+def inspect_youtube_video(
+    request: YouTubeInspectRequest
+):
+
+    video_id = extract_youtube_video_id(
+        request.url
+    )
+
+    return fetch_youtube_metadata(video_id)
 
 
 @app.post("/upload")
