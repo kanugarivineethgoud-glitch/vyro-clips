@@ -106,7 +106,7 @@ video{display:block;width:100%;max-height:520px;background:#050609}
  <div class="navtitle">TOOLS</div>
  <div class="nav">◉ <span>Captions</span></div>
  <div class="nav">⚙ <span>Settings</span></div>
- <div class="sidebottom">VYRO CLIPS<br>Creative Studio<br>Version 3.5</div>
+ <div class="sidebottom">VYRO CLIPS<br>Creative Studio<br>Version 3.6</div>
 </aside>
 
 <main class="main">
@@ -439,10 +439,8 @@ function renderMoments(){
 }
 function processChatBatch(data,pageKey){
  const analysis=data.messages||{};
- // Do not add the same page twice if a request is retried.
  if(chatProcessedPages.has(pageKey))return false;
  chatProcessedPages.add(pageKey);
-
  const batch=analysis.sample_messages||[];
  batch.forEach(message=>{
   const key=[message.published_at,message.text].join("|");
@@ -450,17 +448,13 @@ function processChatBatch(data,pageKey){
   chatSeen.add(key);chatFeedItems.push(message);
  });
  if(chatFeedItems.length>100)chatFeedItems=chatFeedItems.slice(-100);
-
  chatMessageTotal+=Number(analysis.message_count||0);
  chatQuestionTotal+=Number(analysis.question_count||0);
  chatReactionTotal+=Number(analysis.reaction_count||0);
-
  (analysis.top_topics||[]).forEach(topic=>{
   const word=String(topic.word||"");
   if(word)chatTopics[word]=(chatTopics[word]||0)+Number(topic.count||0);
  });
-
- // Combine repeated 30-second buckets from different API pages.
  (analysis.highlight_moments||[]).forEach(moment=>{
   const key=String(moment.start_seconds);
   const existing=chatMoments[key]||{
@@ -471,12 +465,9 @@ function processChatBatch(data,pageKey){
   existing.messages+=Number(moment.messages||0);
   existing.questions+=Number(moment.questions||0);
   existing.reactions+=Number(moment.reactions||0);
-  existing.score=Number((
-   existing.messages+existing.questions*1.5+existing.reactions*.75
-  ).toFixed(2));
+  existing.score=Number((existing.messages+existing.questions*1.5+existing.reactions*.75).toFixed(2));
   chatMoments[key]=existing;
  });
-
  updateChatCounters();renderTopics();renderFeed();renderMoments();
  $("chatDashboard").hidden=false;
  return true;
@@ -505,6 +496,13 @@ async function checkLiveStatus(){
  const input=$("youtubeUrl").value.trim();
  if(!input){setStatus("Paste a YouTube Live or video link first.","error");return;}
  const button=$("checkLiveBtn");button.disabled=true;
+
+ // Clear old chat data if the user has switched to another stream.
+ if(chatVideoUrl!==input){
+  stopChatMonitoring();
+  resetChatDashboard();
+  chatVideoUrl="";
+ }
  clearLiveResult();$("livePanel").hidden=false;
  $("liveHeading").textContent="Checking YouTube live status...";
  $("liveExplanation").textContent="VYRO is requesting live information from YouTube.";
@@ -521,11 +519,24 @@ async function checkLiveStatus(){
   $("liveHeading").textContent=state==="live"?"LivePulse — Stream is live":state==="upcoming"?"LivePulse — Upcoming stream":"LivePulse — Status checked";
   $("liveDot").style.background=state==="live"?"var(--red)":"var(--cyan)";
   $("liveExplanation").textContent=(data.message||"Live status check completed.")+" Chat availability does not automatically mean messages are being read.";
+
   if(data.title)renderYoutubeInfo(data);
   $("youtubeLiveStatus").textContent="Live status: "+label+" | Live chat: "+(data.live_chat_available?"Available":"Not available");
+
+  // THE MAIN FIX: reveal the dashboard when chat is available.
+  if(data.live_chat_available===true){
+   $("chatDashboard").hidden=false;
+   $("chatMonitorStatus").textContent="Live chat is available. Press Start live monitoring to analyse messages.";
+   $("startChatBtn").disabled=false;
+  }else{
+   $("chatDashboard").hidden=true;
+  }
+
   setStatus("LivePulse check completed successfully.","success");
  }catch(error){
-  $("liveHeading").textContent="LivePulse check failed";$("liveExplanation").textContent=error.message;
+  $("liveHeading").textContent="LivePulse check failed";
+  $("liveExplanation").textContent=error.message;
+  $("chatDashboard").hidden=true;
   setStatus("LivePulse error: "+error.message,"error");
  }finally{button.disabled=false;}
 }
@@ -535,20 +546,18 @@ async function fetchChatOnce(expectedEpoch,allowUrlSwitch=false){
  if(chatBusy)return null;
  const input=$("youtubeUrl").value.trim();
  if(!input){$("chatMonitorStatus").textContent="Enter a YouTube link first.";return null;}
-
  if(chatVideoUrl&&chatVideoUrl!==input){
   if(!allowUrlSwitch){
    stopChatMonitoring();
    $("chatMonitorStatus").textContent="The YouTube link changed. Stop and start monitoring again for the new stream.";
    return null;
   }
-  stopChatMonitoring();resetChatDashboard();
+  stopChatMonitoring();resetChatDashboard();chatVideoUrl=input;
+  $("chatDashboard").hidden=false;
  }
  if(!chatVideoUrl)chatVideoUrl=input;
-
  const epoch=chatEpoch;
  if(expectedEpoch!==undefined&&expectedEpoch!==epoch)return null;
-
  chatBusy=true;$("refreshChatBtn").disabled=true;
  const pageTokenUsed=chatPageToken;
  const pageKey=pageTokenUsed||"FIRST_PAGE";
@@ -557,23 +566,28 @@ async function fetchChatOnce(expectedEpoch,allowUrlSwitch=false){
   if(pageTokenUsed)payload.page_token=pageTokenUsed;
   const data=await youtubeRequest("/youtube/live-chat",payload);
   if(epoch!==chatEpoch)return null;
-
   if(data.chat_available===false){
    stopChatMonitoring();
    $("chatMonitorStatus").textContent=data.message||"No active chat is available for this stream.";
    $("liveChat").textContent="Not available";$("liveMessages").textContent="Unavailable";
    return null;
   }
-
   const added=processChatBatch(data,pageKey);
   chatPageToken=data.next_page_token||null;
   const interval=Math.max(1000,Number(data.polling_interval_ms)||5000);
   $("liveChat").textContent="Available";
   $("liveMessages").textContent=chatMessageTotal.toLocaleString()+" analysed";
   $("livePanel").hidden=false;
-  $("chatMonitorStatus").textContent=
-   (added?"New chat page analysed. ":"This chat page was already counted. ")+
-   (chatRunning?"Next check in about "+(interval/1000).toFixed(1)+" seconds.":"Monitoring is stopped.");
+  $("chatDashboard").hidden=false;
+
+  if(chatRunning&&!chatPageToken){
+   stopChatMonitoring();
+   $("chatMonitorStatus").textContent="YouTube did not provide another chat page token. Your results are saved. Press Fetch chat now to request a fresh snapshot.";
+  }else{
+   $("chatMonitorStatus").textContent=
+    (added?"New chat page analysed. ":"This chat page was already counted. ")+
+    (chatRunning?"Next check in about "+(interval/1000).toFixed(1)+" seconds.":"Monitoring is stopped.");
+  }
   return interval;
  }catch(error){
   if(epoch===chatEpoch){
@@ -607,7 +621,7 @@ async function scheduledChatPoll(epoch){
 }
 $("startChatBtn").addEventListener("click",async()=>{
  const input=$("youtubeUrl").value.trim();
- if(!input){setStatus("Paste a YouTube Live link first.","error");return;}
+ if(!input){$("chatMonitorStatus").textContent="Paste a YouTube Live link first.";return;}
  stopChatMonitoring();resetChatDashboard();
  chatVideoUrl=input;chatRunning=true;chatMonitorStartedAt=Date.now();
  $("chatDashboard").hidden=false;
