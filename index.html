@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,14 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080a12">
 <title>VYRO CLIPS — AI Video Studio</title>
+
 <style>
-:root{--bg:#080a12;--panel:#111522;--panel2:#181e2d;--line:#293149;--text:#f5f6ff;--muted:#8d96ad;--purple:#9475ff;--cyan:#5de4df;--red:#ff6969}
+:root{
+ --bg:#080a12;--panel:#111522;--panel2:#181e2d;
+ --line:#293149;--text:#f5f6ff;--muted:#8d96ad;
+ --purple:#9475ff;--cyan:#5de4df;--red:#ff6969
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
-button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}
 .app{display:flex;min-height:100vh}
 .sidebar{width:220px;flex-shrink:0;background:#0d111c;border-right:1px solid var(--line);padding:25px 16px}
-.logo{font-size:26px;font-weight:900;letter-spacing:2px}.logo span{color:var(--purple)}
+.logo{font-size:26px;font-weight:900;letter-spacing:2px}
+.logo span{color:var(--purple)}
 .tag{font-size:9px;color:var(--muted);letter-spacing:3px;margin:7px 0 40px}
 .navtitle{font-size:10px;color:#667089;margin:25px 10px 12px}
 .nav{padding:13px;border-radius:9px;color:#aeb6cb;font-size:13px;margin:5px 0}
@@ -21,27 +28,34 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 .sidebottom{margin-top:50px;background:#181d2b;border-radius:12px;padding:15px;font-size:11px;color:#969fb5;line-height:1.8}
 .main{flex:1;min-width:0;padding:30px;max-width:1450px;margin:auto;width:100%}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;gap:12px}
-.header h1{font-size:25px}.muted{color:var(--muted);font-size:12px;margin-top:7px}
+.header h1{font-size:25px}
+.muted{color:var(--muted);font-size:12px;margin-top:7px}
 .avatar{padding:10px 13px;border:1px solid var(--line);border-radius:10px;font-size:11px}
 .hero{padding:25px;background:linear-gradient(115deg,#251c4c,#171d32);border:1px solid #51418a;border-radius:16px;margin-bottom:25px}
 .eyebrow{font-size:10px;letter-spacing:2px;color:#b9a9ff}
-.hero h2{font-size:30px;margin:13px 0 8px}.hero p{color:#bbc0d2;font-size:13px;line-height:1.7}
+.hero h2{font-size:30px;margin:13px 0 8px}
+.hero p{color:#bbc0d2;font-size:13px;line-height:1.7}
 .sectionhead{display:flex;justify-content:space-between;align-items:center;margin:25px 0 14px;gap:10px}
 .sectionhead h3{font-size:17px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px;margin-bottom:17px}
 .upload{display:block;border:1px dashed #6655a7;border-radius:13px;text-align:center;padding:32px 15px;background:#141526;cursor:pointer}
-.upload:hover{background:#1c1b35}.symbol{font-size:35px;margin-bottom:12px}
-.upload h3{font-size:16px;margin-bottom:8px}.upload p{font-size:11px;color:var(--muted);line-height:1.8}
+.upload:hover{background:#1c1b35}
+.symbol{font-size:35px;margin-bottom:12px}
+.upload h3{font-size:16px;margin-bottom:8px}
+.upload p{font-size:11px;color:var(--muted);line-height:1.8}
 .btn{border:0;border-radius:9px;padding:12px 17px;background:var(--purple);color:white;font-size:12px;font-weight:700}
-.btn:hover{filter:brightness(1.15)}.btn.secondary{background:#252d40;border:1px solid #39425b}
+.btn:hover{filter:brightness(1.15)}
+.btn.secondary{background:#252d40;border:1px solid #39425b}
 .btn.danger{background:#54252e;border:1px solid #873b49}
-.upload .btn{margin-top:17px;display:inline-block}input[type=file]{display:none}
+.upload .btn{margin-top:17px;display:inline-block}
+input[type=file]{display:none}
 .videoarea{background:#07090e;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:220px}
 video{display:block;width:100%;max-height:520px;background:#050609}
 .empty{padding:45px;text-align:center;color:var(--muted);font-size:13px}
 .fileinfo{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:13px}
 .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
-.timeline{margin-top:18px}.timeline label{font-size:11px;color:#abb4c9;display:block;margin-bottom:9px}
+.timeline{margin-top:18px}
+.timeline label{font-size:11px;color:#abb4c9;display:block;margin-bottom:9px}
 .range{width:100%;accent-color:var(--purple);cursor:pointer}
 .rangeinfo{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin:7px 0 17px}
 .settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
@@ -50,12 +64,15 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 .field select{width:100%;background:#0e1421;color:white;border:1px solid #343d53;border-radius:8px;padding:11px;font-size:12px}
 .note,.small{font-size:11px;color:var(--muted);line-height:1.7;margin-top:15px}
 .status{font-size:12px;color:var(--cyan);margin-top:15px;line-height:1.7;overflow-wrap:anywhere}
-.status.error{color:#ff9292}.status.success{color:var(--cyan)}
+.status.error{color:#ff9292}
+.status.success{color:var(--cyan)}
 .textinput{width:100%;background:#0e1421;color:white;border:1px solid #39425b;border-radius:9px;padding:14px;font-size:13px;outline:none}
-.textinput:focus{border-color:var(--purple)}.textinput::placeholder{color:#69738b}
+.textinput:focus{border-color:var(--purple)}
+.textinput::placeholder{color:#69738b}
 .youtube-result{display:flex;gap:16px;align-items:flex-start;margin-top:18px;padding:15px;background:#181e2d;border:1px solid var(--line);border-radius:12px}
 .youtube-thumb{width:220px;max-width:40%;aspect-ratio:16/9;object-fit:cover;border-radius:9px;background:#080a12}
-.youtube-details{flex:1;min-width:0}.youtube-details h4{font-size:15px;line-height:1.5;margin-bottom:8px;overflow-wrap:anywhere}
+.youtube-details{flex:1;min-width:0}
+.youtube-details h4{font-size:15px;line-height:1.5;margin-bottom:8px;overflow-wrap:anywhere}
 .youtube-details p{font-size:11px;color:var(--muted);line-height:1.7;overflow-wrap:anywhere}
 .youtube-details a{color:#b9a9ff;text-decoration:none;font-size:11px;display:inline-block;margin-top:10px}
 .live-panel{margin-top:16px;padding:16px;background:#101a22;border:1px solid #28504f;border-radius:12px}
@@ -76,637 +93,1738 @@ video{display:block;width:100%;max-height:520px;background:#050609}
 .chat-box{background:#151b29;border:1px solid var(--line);border-radius:11px;padding:14px;min-width:0}
 .chat-box h5{font-size:12px;margin-bottom:12px}
 .topic-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #293149;font-size:11px}
-.topic-row:last-child{border:0}.topic-count{color:var(--cyan);font-weight:bold}
+.topic-row:last-child{border:0}
+.topic-count{color:var(--cyan);font-weight:bold}
 .chat-feed{max-height:300px;overflow:auto}
 .chat-item{padding:9px 0;border-bottom:1px solid #293149;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
-.chat-item:last-child{border:0}.chat-time{color:var(--muted);font-size:10px;display:block;margin-bottom:3px}
+.chat-item:last-child{border:0}
+.chat-time{color:var(--muted);font-size:10px;display:block;margin-bottom:3px}
 .chat-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 .chat-tag{font-size:9px;padding:3px 6px;border-radius:5px;background:#292344;color:#c7b8ff}
-.moment{padding:11px 0;border-bottom:1px solid #293149}.moment:last-child{border:0}
+.moment{padding:11px 0;border-bottom:1px solid #293149}
+.moment:last-child{border:0}
 .moment-top{display:flex;justify-content:space-between;gap:8px;font-size:11px}
 .moment p{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.5}
 .chat-empty{font-size:11px;color:var(--muted);line-height:1.7}
 .chat-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
 .clipcard{background:#181e2d;border:1px solid var(--line);padding:15px;border-radius:12px;margin-top:14px}
-.clipcard h4{margin-bottom:8px}.clipcard p{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6}
-.clipcard video{border-radius:8px}.download{display:inline-block;margin-top:12px;text-decoration:none}
-@media(max-width:800px){.sidebar{width:65px;padding:20px 8px}.logo{text-align:center;font-size:17px}.tag,.navtitle,.nav span,.sidebottom{display:none}.nav{text-align:center;font-size:17px;padding:14px 3px}.main{padding:20px}}
-@media(max-width:520px){.sidebar{width:52px}.main{padding:15px 11px}.header h1{font-size:19px}.hero h2{font-size:25px}.settings{grid-template-columns:1fr}.panel{padding:12px}.videoarea{min-height:180px}.youtube-result{display:block}.youtube-thumb{width:100%;max-width:100%;margin-bottom:13px}.live-grid{grid-template-columns:1fr 1fr}.chat-columns{grid-template-columns:1fr}.chat-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.chat-stat{padding:9px}.chat-stat strong{font-size:17px}}
+.clipcard h4{margin-bottom:8px}
+.clipcard p{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+.clipcard video{border-radius:8px}
+.download{display:inline-block;margin-top:12px;text-decoration:none}
+@media(max-width:800px){
+ .sidebar{width:65px;padding:20px 8px}
+ .logo{text-align:center;font-size:17px}
+ .tag,.navtitle,.nav span,.sidebottom{display:none}
+ .nav{text-align:center;font-size:17px;padding:14px 3px}
+ .main{padding:20px}
+}
+@media(max-width:520px){
+ .sidebar{width:52px}
+ .main{padding:15px 11px}
+ .header h1{font-size:19px}
+ .hero h2{font-size:25px}
+ .settings{grid-template-columns:1fr}
+ .panel{padding:12px}
+ .videoarea{min-height:180px}
+ .youtube-result{display:block}
+ .youtube-thumb{width:100%;max-width:100%;margin-bottom:13px}
+ .live-grid{grid-template-columns:1fr 1fr}
+ .chat-columns{grid-template-columns:1fr}
+ .chat-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .chat-stat{padding:9px}
+ .chat-stat strong{font-size:17px}
+}
 </style>
 </head>
+
 <body>
 <div class="app">
+
 <aside class="sidebar">
- <div class="logo">VYRO<span>.</span></div><div class="tag">CLIPS STUDIO</div>
+ <div class="logo">VYRO<span>.</span></div>
+ <div class="tag">CLIPS STUDIO</div>
+
  <div class="navtitle">WORKSPACE</div>
  <div class="nav active">◫ <span>Dashboard</span></div>
  <div class="nav">✂ <span>AI Clips</span></div>
  <div class="nav">▤ <span>My Projects</span></div>
  <div class="nav">▣ <span>Templates</span></div>
+
  <div class="navtitle">TOOLS</div>
  <div class="nav">◉ <span>Captions</span></div>
  <div class="nav">⚙ <span>Settings</span></div>
- <div class="sidebottom">VYRO CLIPS<br>Creative Studio<br>Version 3.6</div>
+
+ <div class="sidebottom">
+  VYRO CLIPS<br>
+  Creative Studio<br>
+  Version 4.0
+ </div>
 </aside>
 
 <main class="main">
+
 <header class="header">
- <div><h1>Creative Studio</h1><p class="muted">Your professional video clipping workspace.</p></div>
+ <div>
+  <h1>Creative Studio</h1>
+  <p class="muted">Your professional video clipping workspace.</p>
+ </div>
  <div class="avatar">✦ VYRO STUDIO</div>
 </header>
 
 <section class="hero">
  <div class="eyebrow">✦ AI VIDEO CLIPPING PLATFORM</div>
  <h2>Make every moment count.</h2>
- <p>Upload your long videos. VYRO analyses your footage and creates candidate short clips automatically.</p>
+ <p>
+  Upload your video directly or connect a YouTube link with matching
+  footage. VYRO analyses the uploaded video and creates candidate clips.
+ </p>
 </section>
 
-<div class="sectionhead"><h3>01 — Import video</h3></div>
+
+<!-- 01 IMPORT -->
+
+<div class="sectionhead">
+ <h3>01 — Import video</h3>
+</div>
+
 <section class="panel">
+
+ <div class="field" style="margin-bottom:14px">
+  <label>CHOOSE YOUR VIDEO SOURCE</label>
+  <select id="sourceMode">
+   <option value="upload">Direct video upload</option>
+   <option value="youtube">YouTube link + matching video footage</option>
+  </select>
+ </div>
+
+ <p class="small" id="sourceHelp" style="margin:0 0 14px">
+  Upload a video file directly. VYRO will analyse it and generate clips.
+ </p>
+
  <label class="upload" for="videoInput">
-  <div class="symbol">⇧</div><h3 id="uploadTitle">Drop your video here</h3>
-  <p id="uploadDesc">Choose a video from your device<br>MP4, MOV, MKV or WEBM</p>
+  <div class="symbol">⇧</div>
+  <h3 id="uploadTitle">Drop your video here</h3>
+  <p id="uploadDesc">
+   Choose a video from your device<br>
+   MP4, MOV, MKV or WEBM
+  </p>
   <span class="btn">Choose video</span>
  </label>
- <input type="file" id="videoInput" accept="video/mp4,video/quicktime,video/webm,video/x-matroska">
- <div class="fileinfo"><span id="fileName">No video selected</span><span id="fileSize"></span></div>
+
+ <input
+  type="file"
+  id="videoInput"
+  accept="video/mp4,video/quicktime,video/webm,video/x-matroska"
+ >
+
+ <div class="fileinfo">
+  <span id="fileName">No video selected</span>
+  <span id="fileSize"></span>
+ </div>
+
+ <p class="note">
+  Maximum upload size: 250 MB. Upload only footage you own or are
+  authorised to use.
+ </p>
+
 </section>
 
-<div class="sectionhead"><h3>02 — YouTube import & LivePulse</h3></div>
+
+<!-- 02 YOUTUBE -->
+
+<div class="sectionhead">
+ <h3>02 — YouTube import & LivePulse</h3>
+</div>
+
 <section class="panel">
- <p class="small">Inspect YouTube videos, check live status and analyse accessible live-chat activity.</p>
- <div style="margin-top:14px"><input class="textinput" id="youtubeUrl" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="url"></div>
+
+ <p class="small">
+  Inspect YouTube videos, check live status and analyse accessible
+  live-chat activity. For clipping, upload the matching footage above.
+ </p>
+
+ <div style="margin-top:14px">
+  <input
+   class="textinput"
+   id="youtubeUrl"
+   type="url"
+   placeholder="https://www.youtube.com/watch?v=..."
+   autocomplete="url"
+  >
+ </div>
+
  <div class="controls">
   <button class="btn" id="inspectYoutubeBtn">▶ Inspect YouTube video</button>
   <button class="btn secondary" id="checkLiveBtn">● Check Live Status</button>
   <button class="btn secondary" id="clearYoutubeBtn">Clear</button>
  </div>
- <div class="status" id="youtubeStatus" aria-live="polite">Paste a YouTube link and choose an action.</div>
+
+ <div class="status" id="youtubeStatus" aria-live="polite">
+  Paste a YouTube link and choose an action.
+ </div>
 
  <div class="youtube-result" id="youtubeResult" hidden>
   <img class="youtube-thumb" id="youtubeThumbnail" alt="YouTube thumbnail">
+
   <div class="youtube-details">
-   <h4 id="youtubeTitle"></h4><p id="youtubeChannel"></p><p id="youtubeVideoId"></p>
-   <p id="youtubeLiveStatus"></p><p id="youtubeFootageStatus"></p>
-   <a id="youtubeOpenLink" href="#" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a>
+   <h4 id="youtubeTitle"></h4>
+   <p id="youtubeChannel"></p>
+   <p id="youtubeVideoId"></p>
+   <p id="youtubeLiveStatus"></p>
+   <p id="youtubeFootageStatus"></p>
+   <a id="youtubeOpenLink" href="#" target="_blank" rel="noopener noreferrer">
+    Open on YouTube ↗
+   </a>
   </div>
  </div>
 
  <div class="live-panel" id="livePanel" hidden>
-  <div class="live-heading"><span class="live-dot" id="liveDot"></span><h4 id="liveHeading">LivePulse results</h4></div>
-  <div class="live-grid">
-   <div class="live-stat"><span>STREAM STATUS</span><strong id="liveState">Not checked</strong></div>
-   <div class="live-stat"><span>CONCURRENT VIEWERS</span><strong id="liveViewers">Unavailable</strong></div>
-   <div class="live-stat"><span>LIVE CHAT</span><strong id="liveChat">Not checked</strong></div>
-   <div class="live-stat"><span>CHAT MESSAGES</span><strong id="liveMessages">Not connected</strong></div>
-   <div class="live-stat"><span>ACTUAL START</span><strong id="liveActualStart">Unavailable</strong></div>
-   <div class="live-stat"><span>SCHEDULED START</span><strong id="liveScheduledStart">Unavailable</strong></div>
+
+  <div class="live-heading">
+   <span class="live-dot" id="liveDot"></span>
+   <h4 id="liveHeading">LivePulse results</h4>
   </div>
-  <p class="live-message" id="liveExplanation">Live status information will appear here.</p>
+
+  <div class="live-grid">
+
+   <div class="live-stat">
+    <span>STREAM STATUS</span>
+    <strong id="liveState">Not checked</strong>
+   </div>
+
+   <div class="live-stat">
+    <span>CONCURRENT VIEWERS</span>
+    <strong id="liveViewers">Unavailable</strong>
+   </div>
+
+   <div class="live-stat">
+    <span>LIVE CHAT</span>
+    <strong id="liveChat">Not checked</strong>
+   </div>
+
+   <div class="live-stat">
+    <span>CHAT MESSAGES</span>
+    <strong id="liveMessages">Not connected</strong>
+   </div>
+
+   <div class="live-stat">
+    <span>ACTUAL START</span>
+    <strong id="liveActualStart">Unavailable</strong>
+   </div>
+
+   <div class="live-stat">
+    <span>SCHEDULED START</span>
+    <strong id="liveScheduledStart">Unavailable</strong>
+   </div>
+
+  </div>
+
+  <p class="live-message" id="liveExplanation">
+   Live status information will appear here.
+  </p>
 
   <div class="chat-dashboard" id="chatDashboard" hidden>
+
    <h4>✦ LIVE CHAT INTELLIGENCE</h4>
+
    <div class="chat-stats">
-    <div class="chat-stat"><span>MESSAGES</span><strong id="chatCount">0</strong></div>
-    <div class="chat-stat"><span>QUESTIONS</span><strong id="questionCount">0</strong></div>
-    <div class="chat-stat"><span>REACTIONS</span><strong id="reactionCount">0</strong></div>
+
+    <div class="chat-stat">
+     <span>MESSAGES</span>
+     <strong id="chatCount">0</strong>
+    </div>
+
+    <div class="chat-stat">
+     <span>QUESTIONS</span>
+     <strong id="questionCount">0</strong>
+    </div>
+
+    <div class="chat-stat">
+     <span>REACTIONS</span>
+     <strong id="reactionCount">0</strong>
+    </div>
+
    </div>
+
    <div class="chat-columns">
-    <div class="chat-box"><h5>🔥 Trending topics</h5><div id="topicList" class="chat-empty">Waiting for chat analysis.</div></div>
-    <div class="chat-box"><h5>💬 Recent chat messages</h5><div id="chatFeed" class="chat-feed chat-empty">No messages loaded yet.</div></div>
+
+    <div class="chat-box">
+     <h5>🔥 Trending topics</h5>
+     <div id="topicList" class="chat-empty">
+      Waiting for chat analysis.
+     </div>
+    </div>
+
+    <div class="chat-box">
+     <h5>💬 Recent chat messages</h5>
+     <div id="chatFeed" class="chat-feed chat-empty">
+      No messages loaded yet.
+     </div>
+    </div>
+
    </div>
+
    <div class="chat-box" style="margin-top:13px">
     <h5>✦ Audience activity timeline</h5>
-    <p class="small" style="margin:0 0 10px">Ranked by chat activity. Times are relative to the stream start, not verified video highlights.</p>
-    <div id="momentList" class="chat-empty">No activity moments yet.</div>
+    <p class="small" style="margin:0 0 10px">
+     Ranked by chat activity. Times are relative to the stream start,
+     not verified video highlights.
+    </p>
+    <div id="momentList" class="chat-empty">
+     No activity moments yet.
+    </div>
    </div>
+
    <div class="chat-actions">
     <button class="btn" id="startChatBtn">▶ Start live monitoring</button>
     <button class="btn danger" id="stopChatBtn" disabled>Ⅱ Stop monitoring</button>
     <button class="btn secondary" id="refreshChatBtn">↻ Fetch chat now</button>
    </div>
-   <p class="live-message" id="chatMonitorStatus" aria-live="polite">Chat monitoring is stopped.</p>
+
+   <p class="live-message" id="chatMonitorStatus" aria-live="polite">
+    Chat monitoring is stopped.
+   </p>
+
   </div>
+
  </div>
- <p class="note">Live chat analysis uses YouTube Data API responses. Only publicly accessible or otherwise authorised chat is supported. VYRO does not download YouTube footage. Upload video footage you own or are authorised to use to create clips.</p>
+
+ <p class="note">
+  Live chat analysis uses YouTube Data API responses. Chat activity
+  can suggest interesting moments, but it is not automatically
+  synchronised with the uploaded footage. VYRO does not download
+  YouTube videos.
+ </p>
+
 </section>
 
-<div class="sectionhead"><h3>03 — Video preview</h3></div>
+
+<!-- 03 PREVIEW -->
+
+<div class="sectionhead">
+ <h3>03 — Video preview</h3>
+</div>
+
 <section class="panel">
- <div class="videoarea" id="videoArea"><div class="empty">Your uploaded video preview will appear here.</div></div>
- <div class="fileinfo"><span id="duration">Duration: --:--</span><span id="resolution">Resolution: --</span></div>
+
+ <div class="videoarea" id="videoArea">
+  <div class="empty">
+   Your uploaded video preview will appear here.
+  </div>
+ </div>
+
+ <div class="fileinfo">
+  <span id="duration">Duration: --:--</span>
+  <span id="resolution">Resolution: --</span>
+ </div>
+
  <div class="controls">
   <button class="btn secondary" id="playBtn" disabled>▶ Play</button>
   <button class="btn secondary" id="pauseBtn" disabled>Ⅱ Pause</button>
   <button class="btn secondary" id="restartBtn" disabled>↺ Restart</button>
  </div>
+
 </section>
 
-<div class="sectionhead"><h3>04 — Clip selection</h3></div>
+
+<!-- 04 CLIP SELECTION -->
+
+<div class="sectionhead">
+ <h3>04 — Clip selection</h3>
+</div>
+
 <section class="panel">
+
  <div class="timeline">
-  <label>CLIP START TIME</label><input class="range" id="startRange" type="range" min="0" max="100" value="0" disabled>
-  <div class="rangeinfo"><span id="startText">00:00</span><span>Start position</span></div>
-  <label>CLIP END TIME</label><input class="range" id="endRange" type="range" min="0" max="100" value="100" disabled>
-  <div class="rangeinfo"><span id="endText">00:00</span><span>End position</span></div>
+
+  <label>CLIP START TIME</label>
+  <input class="range" id="startRange" type="range" min="0" max="100" value="0" disabled>
+
+  <div class="rangeinfo">
+   <span id="startText">00:00</span>
+   <span>Start position</span>
+  </div>
+
+  <label>CLIP END TIME</label>
+  <input class="range" id="endRange" type="range" min="0" max="100" value="100" disabled>
+
+  <div class="rangeinfo">
+   <span id="endText">00:00</span>
+   <span>End position</span>
+  </div>
+
  </div>
- <div class="field"><label>SELECTED CLIP LENGTH</label><div id="clipLength">Upload a video to begin.</div></div>
+
+ <div class="field">
+  <label>SELECTED CLIP LENGTH</label>
+  <div id="clipLength">Upload a video to begin.</div>
+ </div>
+
  <div class="controls">
   <button class="btn secondary" id="previewClip" disabled>▶ Preview selection</button>
   <button class="btn secondary" id="setStart" disabled>Set start at current time</button>
   <button class="btn secondary" id="setEnd" disabled>Set end at current time</button>
  </div>
+
 </section>
 
-<div class="sectionhead"><h3>05 — Clip preferences</h3></div>
+
+<!-- 05 PREFERENCES -->
+
+<div class="sectionhead">
+ <h3>05 — Clip preferences</h3>
+</div>
+
 <section class="panel">
+
  <div class="settings">
-  <div class="field"><label>CONTENT TYPE</label><select id="style"><option>Automatic</option><option>Podcast / Interview</option><option>Gaming</option><option>Education</option><option>Commentary</option></select></div>
-  <div class="field"><label>ASPECT RATIO</label><select id="ratio"><option>9:16 Vertical</option><option>16:9 Landscape</option><option>1:1 Square</option></select></div>
-  <div class="field"><label>OUTPUT QUALITY</label><select id="quality"><option>1080p Full HD</option><option>4K Ultra HD</option></select></div>
-  <div class="field"><label>CAPTION STYLE</label><select id="caption"><option>Animated captions</option><option>Clean subtitles</option><option>No captions</option></select></div>
+
+  <div class="field">
+   <label>CONTENT TYPE</label>
+   <select id="style">
+    <option>Automatic</option>
+    <option>Podcast / Interview</option>
+    <option>Gaming</option>
+    <option>Education</option>
+    <option>Commentary</option>
+   </select>
+  </div>
+
+  <div class="field">
+   <label>ASPECT RATIO</label>
+   <select id="ratio">
+    <option>9:16 Vertical</option>
+    <option>16:9 Landscape</option>
+    <option>1:1 Square</option>
+   </select>
+  </div>
+
+  <div class="field">
+   <label>OUTPUT QUALITY</label>
+   <select id="quality">
+    <option>1080p Full HD</option>
+    <option>4K Ultra HD</option>
+   </select>
+  </div>
+
+  <div class="field">
+   <label>CAPTION STYLE</label>
+   <select id="caption">
+    <option>Animated captions</option>
+    <option>Clean subtitles</option>
+    <option>No captions</option>
+   </select>
+  </div>
+
  </div>
- <p class="note">These preferences are displayed for planning. The current backend does not yet apply aspect ratio, quality or caption settings to exported clips.</p>
- <div class="controls"><button class="btn" id="autoClipBtn" disabled>✦ Generate clips automatically</button></div>
- <div class="status" id="status">Studio ready. Upload a video to start.</div>
+
+ <p class="note">
+  Content type, aspect ratio, quality and caption choices are currently
+  saved only in this page's interface. The current export engine does
+  not yet apply these settings to the generated clips.
+ </p>
+
+ <div class="controls">
+  <button class="btn" id="autoClipBtn" disabled>
+   ✦ Generate clips automatically
+  </button>
+ </div>
+
+ <div class="status" id="status">
+  Studio ready. Upload a video to start.
+ </div>
+
 </section>
 
-<div class="sectionhead"><h3>06 — Your generated clips</h3></div>
-<section class="panel" id="results"><p class="small" id="resultsMessage">Your finished clips will appear here after processing.</p><div id="clipResults"></div></section>
+
+<!-- 06 RESULTS -->
+
+<div class="sectionhead">
+ <h3>06 — Your generated clips</h3>
+</div>
+
+<section class="panel" id="results">
+ <p class="small" id="resultsMessage">
+  Your finished clips will appear here after processing.
+ </p>
+ <div id="clipResults"></div>
+</section>
+
 </main>
 </div>
 
+
 <script>
 "use strict";
-const API_BASE="https://vyro-clips-1.onrender.com";
-const $=id=>document.getElementById(id);
 
-let video=null,videoURL=null,total=0,currentJob=null;
-let chatRunning=false,chatTimer=null,chatBusy=false;
-let chatPageToken=null,chatVideoUrl="";
-let chatEpoch=0,chatMonitorStartedAt=0;
-let chatProcessedPages=new Set(),chatSeen=new Set(),chatFeedItems=[];
-let chatMessageTotal=0,chatQuestionTotal=0,chatReactionTotal=0;
-let chatMoments={},chatTopics={};
-const CHAT_MAX_MONITOR_MS=10*60*1000;
+const API_BASE = "https://vyro-clips-1.onrender.com";
+const $ = id => document.getElementById(id);
 
-function time(t){
- if(!Number.isFinite(Number(t)))return "Unavailable";
- const s=Number(t),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);
- if(h>0)return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");
- return String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");
-}
-function formatDate(value){
- if(!value)return "Unavailable";
- const d=new Date(value);
- return Number.isNaN(d.getTime())?"Unavailable":d.toLocaleString();
-}
-function setStatus(message,type){
- $("youtubeStatus").textContent=message;
- $("youtubeStatus").className="status"+(type?" "+type:"");
-}
-function setControls(enabled){
- ["playBtn","pauseBtn","restartBtn","previewClip","setStart","setEnd","startRange","endRange"].forEach(id=>$(id).disabled=!enabled);
-}
-function updateSelection(){
- if(!video||!total)return;
- let start=Number($("startRange").value),end=Number($("endRange").value);
- if(start>=end){end=Math.min(total,start+1);$("endRange").value=end;}
- $("startText").textContent=time(start);
- $("endText").textContent=time(end);
- $("clipLength").textContent=time(end-start);
+let video = null;
+let videoURL = null;
+let total = 0;
+let currentJob = null;
+
+let chatRunning = false;
+let chatTimer = null;
+let chatBusy = false;
+let chatPageToken = null;
+let chatVideoUrl = "";
+let chatEpoch = 0;
+let chatMonitorStartedAt = 0;
+
+let chatProcessedPages = new Set();
+let chatSeen = new Set();
+let chatFeedItems = [];
+
+let chatMessageTotal = 0;
+let chatQuestionTotal = 0;
+let chatReactionTotal = 0;
+
+let chatMoments = {};
+let chatTopics = {};
+
+const CHAT_MAX_MONITOR_MS = 10 * 60 * 1000;
+
+
+// =========================================================
+// GENERAL HELPERS
+// =========================================================
+
+function time(t) {
+ if (!Number.isFinite(Number(t))) return "Unavailable";
+
+ const s = Number(t);
+ const h = Math.floor(s / 3600);
+ const m = Math.floor((s % 3600) / 60);
+ const sec = Math.floor(s % 60);
+
+ if (h > 0) {
+  return String(h).padStart(2,"0") + ":" +
+   String(m).padStart(2,"0") + ":" +
+   String(sec).padStart(2,"0");
+ }
+
+ return String(m).padStart(2,"0") + ":" +
+  String(sec).padStart(2,"0");
 }
 
-// VIDEO UPLOAD AND PREVIEW
-$("videoInput").addEventListener("change",e=>{
- const file=e.target.files[0];if(!file)return;
- if(!file.type.startsWith("video/")){$("status").textContent="Please select a valid video file.";return;}
- if(videoURL)URL.revokeObjectURL(videoURL);
- videoURL=URL.createObjectURL(file);
- $("videoArea").replaceChildren();
- video=document.createElement("video");
- video.src=videoURL;video.controls=true;video.playsInline=true;video.preload="metadata";
- $("videoArea").appendChild(video);
- $("uploadTitle").textContent=file.name;
- $("uploadDesc").textContent="Video selected. Ready for processing.";
- $("fileName").textContent=file.name;
- $("fileSize").textContent=(file.size/1024/1024).toFixed(2)+" MB";
- $("status").textContent="Loading video information...";
- $("autoClipBtn").disabled=true;setControls(false);
- video.addEventListener("loadedmetadata",()=>{
-  total=video.duration;
-  $("duration").textContent="Duration: "+time(total);
-  $("resolution").textContent="Resolution: "+video.videoWidth+" × "+video.videoHeight;
-  $("startRange").max=total;$("endRange").max=total;
-  $("startRange").value=0;$("endRange").value=total;
-  updateSelection();setControls(true);$("autoClipBtn").disabled=false;
-  $("status").textContent="Video loaded. Ready to send to VYRO CLIPS.";
+function formatDate(value) {
+ if (!value) return "Unavailable";
+
+ const d = new Date(value);
+
+ return Number.isNaN(d.getTime())
+  ? "Unavailable"
+  : d.toLocaleString();
+}
+
+function setStatus(message, type) {
+ $("youtubeStatus").textContent = message;
+ $("youtubeStatus").className = "status" + (type ? " " + type : "");
+}
+
+function setControls(enabled) {
+ [
+  "playBtn",
+  "pauseBtn",
+  "restartBtn",
+  "previewClip",
+  "setStart",
+  "setEnd",
+  "startRange",
+  "endRange"
+ ].forEach(id => {
+  $(id).disabled = !enabled;
  });
- video.addEventListener("error",()=>{$("status").textContent="This video format could not be previewed by your browser.";});
+}
+
+function updateSelection() {
+ if (!video || !total) return;
+
+ let start = Number($("startRange").value);
+ let end = Number($("endRange").value);
+
+ if (start >= end) {
+  end = Math.min(total, start + 1);
+  $("endRange").value = end;
+ }
+
+ $("startText").textContent = time(start);
+ $("endText").textContent = time(end);
+ $("clipLength").textContent = time(end - start);
+}
+
+
+// =========================================================
+// SOURCE MODE
+// =========================================================
+
+$("sourceMode").addEventListener("change", () => {
+ const mode = $("sourceMode").value;
+
+ if (mode === "youtube") {
+  $("sourceHelp").textContent =
+   "Paste the YouTube link in section 02, then upload the matching video footage here. VYRO will analyse the uploaded file.";
+
+  $("uploadTitle").textContent =
+   "Upload matching YouTube footage";
+
+  $("uploadDesc").textContent =
+   "Choose the corresponding video file from your device";
+ } else {
+  $("sourceHelp").textContent =
+   "Upload a video file directly. VYRO will analyse it and generate clips.";
+
+  $("uploadTitle").textContent =
+   "Drop your video here";
+
+  $("uploadDesc").textContent =
+   "Choose a video from your device · MP4, MOV, MKV or WEBM";
+ }
 });
-$("playBtn").onclick=()=>video?.play();
-$("pauseBtn").onclick=()=>video?.pause();
-$("restartBtn").onclick=()=>{if(video){video.currentTime=0;video.play();}};
-$("startRange").addEventListener("input",()=>{updateSelection();if(video)video.currentTime=Number($("startRange").value);});
-$("endRange").addEventListener("input",updateSelection);
-$("setStart").onclick=()=>{if(!video)return;$("startRange").value=Math.min(video.currentTime,Number($("endRange").value)-1);updateSelection();};
-$("setEnd").onclick=()=>{if(!video)return;$("endRange").value=Math.max(video.currentTime,Number($("startRange").value)+1);updateSelection();};
-$("previewClip").onclick=()=>{
- if(!video)return;
- const start=Number($("startRange").value),end=Number($("endRange").value);
- if(end<=start){$("status").textContent="Choose a valid clip range.";return;}
- video.currentTime=start;video.play();
- $("status").textContent="Previewing selected section.";
- video.ontimeupdate=()=>{if(video.currentTime>=end){video.pause();video.ontimeupdate=null;}};
+
+
+// =========================================================
+// VIDEO UPLOAD AND PREVIEW
+// =========================================================
+
+$("videoInput").addEventListener("change", e => {
+ const file = e.target.files[0];
+
+ if (!file) return;
+
+ if (!file.type.startsWith("video/")) {
+  $("status").textContent = "Please select a valid video file.";
+  return;
+ }
+
+ if (file.size > 250 * 1024 * 1024) {
+  $("status").textContent =
+   "This file exceeds the 250 MB upload limit.";
+  $("videoInput").value = "";
+  return;
+ }
+
+ if (videoURL) URL.revokeObjectURL(videoURL);
+
+ videoURL = URL.createObjectURL(file);
+
+ $("videoArea").replaceChildren();
+
+ video = document.createElement("video");
+ video.src = videoURL;
+ video.controls = true;
+ video.playsInline = true;
+ video.preload = "metadata";
+
+ $("videoArea").appendChild(video);
+
+ $("uploadTitle").textContent = file.name;
+ $("uploadDesc").textContent = "Video selected. Ready for processing.";
+
+ $("fileName").textContent = file.name;
+ $("fileSize").textContent =
+  (file.size / 1024 / 1024).toFixed(2) + " MB";
+
+ $("status").textContent = "Loading video information...";
+ $("autoClipBtn").disabled = true;
+
+ setControls(false);
+
+ video.addEventListener("loadedmetadata", () => {
+  total = video.duration;
+
+  if (!Number.isFinite(total) || total <= 0) {
+   $("status").textContent = "Could not read video duration.";
+   return;
+  }
+
+  $("duration").textContent = "Duration: " + time(total);
+
+  $("resolution").textContent =
+   "Resolution: " + video.videoWidth + " × " + video.videoHeight;
+
+  $("startRange").max = total;
+  $("endRange").max = total;
+
+  $("startRange").value = 0;
+  $("endRange").value = total;
+
+  updateSelection();
+  setControls(true);
+
+  $("autoClipBtn").disabled = false;
+
+  $("status").textContent =
+   "Video loaded. Ready to send to VYRO CLIPS.";
+ });
+
+ video.addEventListener("error", () => {
+  $("status").textContent =
+   "This video format could not be previewed by your browser.";
+ });
+});
+
+$("playBtn").onclick = () => video?.play();
+
+$("pauseBtn").onclick = () => video?.pause();
+
+$("restartBtn").onclick = () => {
+ if (video) {
+  video.currentTime = 0;
+  video.play();
+ }
 };
 
+$("startRange").addEventListener("input", () => {
+ updateSelection();
+
+ if (video) {
+  video.currentTime = Number($("startRange").value);
+ }
+});
+
+$("endRange").addEventListener("input", updateSelection);
+
+$("setStart").onclick = () => {
+ if (!video) return;
+
+ $("startRange").value = Math.min(
+  video.currentTime,
+  Number($("endRange").value) - 1
+ );
+
+ updateSelection();
+};
+
+$("setEnd").onclick = () => {
+ if (!video) return;
+
+ $("endRange").value = Math.max(
+  video.currentTime,
+  Number($("startRange").value) + 1
+ );
+
+ updateSelection();
+};
+
+$("previewClip").onclick = () => {
+ if (!video) return;
+
+ const start = Number($("startRange").value);
+ const end = Number($("endRange").value);
+
+ if (end <= start) {
+  $("status").textContent = "Choose a valid clip range.";
+  return;
+ }
+
+ video.currentTime = start;
+ video.play();
+
+ $("status").textContent = "Previewing selected section.";
+
+ video.ontimeupdate = () => {
+  if (video.currentTime >= end) {
+   video.pause();
+   video.ontimeupdate = null;
+  }
+ };
+};
+
+
+// =========================================================
 // YOUTUBE REQUEST HELPER
-async function youtubeRequest(endpoint,payload){
- const response=await fetch(API_BASE+endpoint,{
-  method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
-  body:JSON.stringify(payload)
+// =========================================================
+
+async function youtubeRequest(endpoint, payload) {
+ const response = await fetch(API_BASE + endpoint, {
+  method: "POST",
+  headers: {
+   "Content-Type": "application/json",
+   "Accept": "application/json"
+  },
+  body: JSON.stringify(payload)
  });
+
  let data;
- try{data=await response.json();}catch{throw new Error("The server returned an unreadable response.");}
- if(!response.ok){
-  let message="Request failed. Please try again.";
-  if(typeof data.detail==="string")message=data.detail;
-  else if(Array.isArray(data.detail))message=data.detail.map(x=>x.msg||"Invalid input").join(", ");
+
+ try {
+  data = await response.json();
+ } catch {
+  throw new Error("The server returned an unreadable response.");
+ }
+
+ if (!response.ok) {
+  let message = "Request failed. Please try again.";
+
+  if (typeof data.detail === "string") {
+   message = data.detail;
+  } else if (Array.isArray(data.detail)) {
+   message = data.detail.map(x => x.msg || "Invalid input").join(", ");
+  }
+
   throw new Error(message);
  }
- if(data.ok===false)throw new Error(data.message||"Request could not be completed.");
+
+ if (data.ok === false) {
+  throw new Error(data.message || "Request could not be completed.");
+ }
+
  return data;
 }
-function clearYoutubeResult(){
- $("youtubeResult").hidden=true;$("youtubeThumbnail").removeAttribute("src");
- ["youtubeTitle","youtubeChannel","youtubeVideoId","youtubeLiveStatus","youtubeFootageStatus"].forEach(id=>$(id).textContent="");
- $("youtubeOpenLink").href="#";
-}
-function clearLiveResult(){
- $("livePanel").hidden=true;
- $("liveState").textContent="Not checked";$("liveViewers").textContent="Unavailable";
- $("liveChat").textContent="Not checked";$("liveMessages").textContent="Not connected";
- $("liveActualStart").textContent="Unavailable";$("liveScheduledStart").textContent="Unavailable";
- $("liveExplanation").textContent="";$("liveHeading").textContent="LivePulse results";
- $("liveDot").style.background="var(--cyan)";
-}
-function renderYoutubeInfo(data){
- $("youtubeTitle").textContent=data.title||"Title unavailable";
- $("youtubeChannel").textContent="Channel: "+(data.channel||"Unavailable");
- $("youtubeVideoId").textContent="Video ID: "+(data.video_id||"Unavailable");
- $("youtubeLiveStatus").textContent="Live status: "+(data.live_status||"Not checked");
- $("youtubeFootageStatus").textContent="Footage access: "+(data.footage_access||"Not provided");
- if(data.thumbnail)$("youtubeThumbnail").src=data.thumbnail;
- if(data.url)$("youtubeOpenLink").href=data.url;
- $("youtubeResult").hidden=false;
+
+function clearYoutubeResult() {
+ $("youtubeResult").hidden = true;
+ $("youtubeThumbnail").removeAttribute("src");
+
+ [
+  "youtubeTitle",
+  "youtubeChannel",
+  "youtubeVideoId",
+  "youtubeLiveStatus",
+  "youtubeFootageStatus"
+ ].forEach(id => {
+  $(id).textContent = "";
+ });
+
+ $("youtubeOpenLink").href = "#";
 }
 
+function clearLiveResult() {
+ $("livePanel").hidden = true;
+
+ $("liveState").textContent = "Not checked";
+ $("liveViewers").textContent = "Unavailable";
+ $("liveChat").textContent = "Not checked";
+ $("liveMessages").textContent = "Not connected";
+ $("liveActualStart").textContent = "Unavailable";
+ $("liveScheduledStart").textContent = "Unavailable";
+
+ $("liveExplanation").textContent = "";
+ $("liveHeading").textContent = "LivePulse results";
+ $("liveDot").style.background = "var(--cyan)";
+}
+
+function renderYoutubeInfo(data) {
+ $("youtubeTitle").textContent = data.title || "Title unavailable";
+
+ $("youtubeChannel").textContent =
+  "Channel: " + (data.channel || "Unavailable");
+
+ $("youtubeVideoId").textContent =
+  "Video ID: " + (data.video_id || "Unavailable");
+
+ $("youtubeLiveStatus").textContent =
+  "Live status: " + (data.live_status || "Not checked");
+
+ $("youtubeFootageStatus").textContent =
+  "Footage access: " + (data.footage_access || "Not provided");
+
+ if (data.thumbnail) {
+  $("youtubeThumbnail").src = data.thumbnail;
+ }
+
+ if (data.url) {
+  $("youtubeOpenLink").href = data.url;
+ }
+
+ $("youtubeResult").hidden = false;
+}
+
+
+// =========================================================
 // CHAT STATE
-function resetChatDashboard(){
+// =========================================================
+
+function resetChatDashboard() {
  chatEpoch++;
- chatPageToken=null;chatProcessedPages=new Set();chatSeen=new Set();chatFeedItems=[];
- chatMessageTotal=0;chatQuestionTotal=0;chatReactionTotal=0;
- chatMoments={};chatTopics={};
- $("chatDashboard").hidden=true;
- $("chatCount").textContent="0";$("questionCount").textContent="0";$("reactionCount").textContent="0";
- $("topicList").textContent="Waiting for chat analysis.";
- $("topicList").className="chat-empty";
- $("chatFeed").textContent="No messages loaded yet.";
- $("chatFeed").className="chat-feed chat-empty";
- $("momentList").textContent="No activity moments yet.";
- $("momentList").className="chat-empty";
- $("chatMonitorStatus").textContent="Chat monitoring is stopped.";
- $("startChatBtn").disabled=false;$("stopChatBtn").disabled=true;
+
+ chatPageToken = null;
+ chatProcessedPages = new Set();
+ chatSeen = new Set();
+ chatFeedItems = [];
+
+ chatMessageTotal = 0;
+ chatQuestionTotal = 0;
+ chatReactionTotal = 0;
+
+ chatMoments = {};
+ chatTopics = {};
+
+ $("chatDashboard").hidden = true;
+
+ $("chatCount").textContent = "0";
+ $("questionCount").textContent = "0";
+ $("reactionCount").textContent = "0";
+
+ $("topicList").textContent = "Waiting for chat analysis.";
+ $("topicList").className = "chat-empty";
+
+ $("chatFeed").textContent = "No messages loaded yet.";
+ $("chatFeed").className = "chat-feed chat-empty";
+
+ $("momentList").textContent = "No activity moments yet.";
+ $("momentList").className = "chat-empty";
+
+ $("chatMonitorStatus").textContent = "Chat monitoring is stopped.";
+
+ $("startChatBtn").disabled = false;
+ $("stopChatBtn").disabled = true;
 }
-function stopChatMonitoring(){
- chatRunning=false;chatEpoch++;
- if(chatTimer){clearTimeout(chatTimer);chatTimer=null;}
- $("startChatBtn").disabled=false;$("stopChatBtn").disabled=true;
+
+function stopChatMonitoring() {
+ chatRunning = false;
+ chatEpoch++;
+
+ if (chatTimer) {
+  clearTimeout(chatTimer);
+  chatTimer = null;
+ }
+
+ $("startChatBtn").disabled = false;
+ $("stopChatBtn").disabled = true;
 }
-function updateChatCounters(){
- $("chatCount").textContent=chatMessageTotal.toLocaleString();
- $("questionCount").textContent=chatQuestionTotal.toLocaleString();
- $("reactionCount").textContent=chatReactionTotal.toLocaleString();
+
+function updateChatCounters() {
+ $("chatCount").textContent = chatMessageTotal.toLocaleString();
+ $("questionCount").textContent = chatQuestionTotal.toLocaleString();
+ $("reactionCount").textContent = chatReactionTotal.toLocaleString();
 }
-function renderTopics(){
- const box=$("topicList");box.replaceChildren();
- const list=Object.entries(chatTopics).sort((a,b)=>b[1]-a[1]).slice(0,10);
- if(!list.length){box.textContent="No repeated topics detected yet.";box.className="chat-empty";return;}
- box.className="";
- list.forEach(([word,count])=>{
-  const row=document.createElement("div");row.className="topic-row";
-  const name=document.createElement("span");name.textContent=word;
-  const value=document.createElement("span");value.className="topic-count";value.textContent=count+" mentions";
-  row.append(name,value);box.appendChild(row);
+
+function renderTopics() {
+ const box = $("topicList");
+ box.replaceChildren();
+
+ const list = Object.entries(chatTopics)
+  .sort((a,b) => b[1] - a[1])
+  .slice(0,10);
+
+ if (!list.length) {
+  box.textContent = "No repeated topics detected yet.";
+  box.className = "chat-empty";
+  return;
+ }
+
+ box.className = "";
+
+ list.forEach(([word,count]) => {
+  const row = document.createElement("div");
+  row.className = "topic-row";
+
+  const name = document.createElement("span");
+  name.textContent = word;
+
+  const value = document.createElement("span");
+  value.className = "topic-count";
+  value.textContent = count + " mentions";
+
+  row.append(name,value);
+  box.appendChild(row);
  });
 }
-function renderFeed(){
- const box=$("chatFeed");box.replaceChildren();
- const list=chatFeedItems.slice(-30).reverse();
- if(!list.length){box.textContent="No messages returned yet.";box.className="chat-empty";return;}
- box.className="chat-feed";
- list.forEach(message=>{
-  const item=document.createElement("div");item.className="chat-item";
-  const timestamp=document.createElement("span");timestamp.className="chat-time";
-  timestamp.textContent=message.published_at?formatDate(message.published_at):"Recent message";
-  const text=document.createElement("div");text.textContent=message.text||"";
+
+function renderFeed() {
+ const box = $("chatFeed");
+ box.replaceChildren();
+
+ const list = chatFeedItems.slice(-30).reverse();
+
+ if (!list.length) {
+  box.textContent = "No messages returned yet.";
+  box.className = "chat-empty";
+  return;
+ }
+
+ box.className = "chat-feed";
+
+ list.forEach(message => {
+  const item = document.createElement("div");
+  item.className = "chat-item";
+
+  const timestamp = document.createElement("span");
+  timestamp.className = "chat-time";
+
+  timestamp.textContent = message.published_at
+   ? formatDate(message.published_at)
+   : "Recent message";
+
+  const text = document.createElement("div");
+  text.textContent = message.text || "";
+
   item.append(timestamp,text);
-  if(message.is_question||message.is_reaction){
-   const tags=document.createElement("div");tags.className="chat-tags";
-   if(message.is_question){const tag=document.createElement("span");tag.className="chat-tag";tag.textContent="QUESTION";tags.appendChild(tag);}
-   if(message.is_reaction){const tag=document.createElement("span");tag.className="chat-tag";tag.textContent="REACTION";tags.appendChild(tag);}
+
+  if (message.is_question || message.is_reaction) {
+   const tags = document.createElement("div");
+   tags.className = "chat-tags";
+
+   if (message.is_question) {
+    const tag = document.createElement("span");
+    tag.className = "chat-tag";
+    tag.textContent = "QUESTION";
+    tags.appendChild(tag);
+   }
+
+   if (message.is_reaction) {
+    const tag = document.createElement("span");
+    tag.className = "chat-tag";
+    tag.textContent = "REACTION";
+    tags.appendChild(tag);
+   }
+
    item.appendChild(tags);
   }
+
   box.appendChild(item);
  });
 }
-function renderMoments(){
- const box=$("momentList");box.replaceChildren();
- const moments=Object.values(chatMoments).sort((a,b)=>b.score-a.score).slice(0,8);
- if(!moments.length){box.textContent="No timestamped activity moments available yet.";box.className="chat-empty";return;}
- box.className="";
- moments.forEach(moment=>{
-  const item=document.createElement("div");item.className="moment";
-  const top=document.createElement("div");top.className="moment-top";
-  const stamp=document.createElement("strong");stamp.textContent=time(moment.start_seconds)+" – "+time(moment.end_seconds);
-  const score=document.createElement("span");score.textContent="Score "+Number(moment.score).toFixed(2);
+
+function renderMoments() {
+ const box = $("momentList");
+ box.replaceChildren();
+
+ const moments = Object.values(chatMoments)
+  .sort((a,b) => b.score - a.score)
+  .slice(0,8);
+
+ if (!moments.length) {
+  box.textContent = "No timestamped activity moments available yet.";
+  box.className = "chat-empty";
+  return;
+ }
+
+ box.className = "";
+
+ moments.forEach(moment => {
+  const item = document.createElement("div");
+  item.className = "moment";
+
+  const top = document.createElement("div");
+  top.className = "moment-top";
+
+  const stamp = document.createElement("strong");
+  stamp.textContent =
+   time(moment.start_seconds) + " – " + time(moment.end_seconds);
+
+  const score = document.createElement("span");
+  score.textContent = "Score " + Number(moment.score).toFixed(2);
+
   top.append(stamp,score);
-  const details=document.createElement("p");
-  details.textContent=moment.messages+" messages · "+moment.questions+" questions · "+moment.reactions+" reactions";
-  const note=document.createElement("p");note.textContent="Stream-relative timestamp; not a downloaded or verified video clip.";
-  item.append(top,details,note);box.appendChild(item);
+
+  const details = document.createElement("p");
+  details.textContent =
+   moment.messages + " messages · " +
+   moment.questions + " questions · " +
+   moment.reactions + " reactions";
+
+  const note = document.createElement("p");
+  note.textContent =
+   "Stream-relative timestamp; not a verified video clip.";
+
+  item.append(top,details,note);
+  box.appendChild(item);
  });
 }
-function processChatBatch(data,pageKey){
- const analysis=data.messages||{};
- if(chatProcessedPages.has(pageKey))return false;
+
+function processChatBatch(data,pageKey) {
+ const analysis = data.messages || {};
+
+ if (chatProcessedPages.has(pageKey)) return false;
+
  chatProcessedPages.add(pageKey);
- const batch=analysis.sample_messages||[];
- batch.forEach(message=>{
-  const key=[message.published_at,message.text].join("|");
-  if(chatSeen.has(key))return;
-  chatSeen.add(key);chatFeedItems.push(message);
+
+ const batch = analysis.sample_messages || [];
+
+ batch.forEach(message => {
+  const key = [message.published_at,message.text].join("|");
+
+  if (chatSeen.has(key)) return;
+
+  chatSeen.add(key);
+  chatFeedItems.push(message);
  });
- if(chatFeedItems.length>100)chatFeedItems=chatFeedItems.slice(-100);
- chatMessageTotal+=Number(analysis.message_count||0);
- chatQuestionTotal+=Number(analysis.question_count||0);
- chatReactionTotal+=Number(analysis.reaction_count||0);
- (analysis.top_topics||[]).forEach(topic=>{
-  const word=String(topic.word||"");
-  if(word)chatTopics[word]=(chatTopics[word]||0)+Number(topic.count||0);
+
+ if (chatFeedItems.length > 100) {
+  chatFeedItems = chatFeedItems.slice(-100);
+ }
+
+ chatMessageTotal += Number(analysis.message_count || 0);
+ chatQuestionTotal += Number(analysis.question_count || 0);
+ chatReactionTotal += Number(analysis.reaction_count || 0);
+
+ (analysis.top_topics || []).forEach(topic => {
+  const word = String(topic.word || "");
+
+  if (word) {
+   chatTopics[word] =
+    (chatTopics[word] || 0) + Number(topic.count || 0);
+  }
  });
- (analysis.highlight_moments||[]).forEach(moment=>{
-  const key=String(moment.start_seconds);
-  const existing=chatMoments[key]||{
-   start_seconds:Number(moment.start_seconds),
-   end_seconds:Number(moment.end_seconds),
-   messages:0,questions:0,reactions:0
+
+ (analysis.highlight_moments || []).forEach(moment => {
+  const key = String(moment.start_seconds);
+
+  const existing = chatMoments[key] || {
+   start_seconds: Number(moment.start_seconds),
+   end_seconds: Number(moment.end_seconds),
+   messages: 0,
+   questions: 0,
+   reactions: 0
   };
-  existing.messages+=Number(moment.messages||0);
-  existing.questions+=Number(moment.questions||0);
-  existing.reactions+=Number(moment.reactions||0);
-  existing.score=Number((existing.messages+existing.questions*1.5+existing.reactions*.75).toFixed(2));
-  chatMoments[key]=existing;
+
+  existing.messages += Number(moment.messages || 0);
+  existing.questions += Number(moment.questions || 0);
+  existing.reactions += Number(moment.reactions || 0);
+
+  existing.score = Number((
+   existing.messages +
+   existing.questions * 1.5 +
+   existing.reactions * 0.75
+  ).toFixed(2));
+
+  chatMoments[key] = existing;
  });
- updateChatCounters();renderTopics();renderFeed();renderMoments();
- $("chatDashboard").hidden=false;
+
+ updateChatCounters();
+ renderTopics();
+ renderFeed();
+ renderMoments();
+
+ $("chatDashboard").hidden = false;
+
  return true;
 }
 
+
+// =========================================================
 // YOUTUBE INSPECTOR
+// =========================================================
+
 $("inspectYoutubeBtn").addEventListener("click",inspectYoutube);
-$("youtubeUrl").addEventListener("keydown",e=>{if(e.key==="Enter")inspectYoutube();});
-async function inspectYoutube(){
- const input=$("youtubeUrl").value.trim();
- if(!input){setStatus("Paste a YouTube video or Live link first.","error");return;}
- const button=$("inspectYoutubeBtn");button.disabled=true;
- stopChatMonitoring();resetChatDashboard();chatVideoUrl="";
- clearYoutubeResult();clearLiveResult();
+
+$("youtubeUrl").addEventListener("keydown",e => {
+ if (e.key === "Enter") inspectYoutube();
+});
+
+async function inspectYoutube() {
+ const input = $("youtubeUrl").value.trim();
+
+ if (!input) {
+  setStatus("Paste a YouTube video or Live link first.","error");
+  return;
+ }
+
+ const button = $("inspectYoutubeBtn");
+ button.disabled = true;
+
+ stopChatMonitoring();
+ resetChatDashboard();
+ chatVideoUrl = "";
+
+ clearYoutubeResult();
+ clearLiveResult();
+
  setStatus("Connecting to VYRO. Inspecting YouTube link...");
- try{
-  const data=await youtubeRequest("/youtube/inspect",{url:input});
-  renderYoutubeInfo(data);setStatus("YouTube information retrieved successfully.","success");
- }catch(error){setStatus("Error: "+error.message,"error");}
- finally{button.disabled=false;}
+
+ try {
+  const data = await youtubeRequest(
+   "/youtube/inspect",
+   {url:input}
+  );
+
+  renderYoutubeInfo(data);
+
+  setStatus(
+   "YouTube information retrieved successfully.",
+   "success"
+  );
+
+ } catch(error) {
+  setStatus("Error: " + error.message,"error");
+
+ } finally {
+  button.disabled = false;
+ }
 }
 
-// LIVE STATUS
-$("checkLiveBtn").addEventListener("click",checkLiveStatus);
-async function checkLiveStatus(){
- const input=$("youtubeUrl").value.trim();
- if(!input){setStatus("Paste a YouTube Live or video link first.","error");return;}
- const button=$("checkLiveBtn");button.disabled=true;
 
- // Clear old chat data if the user has switched to another stream.
- if(chatVideoUrl!==input){
+// =========================================================
+// LIVE STATUS
+// =========================================================
+
+$("checkLiveBtn").addEventListener("click",checkLiveStatus);
+
+async function checkLiveStatus() {
+ const input = $("youtubeUrl").value.trim();
+
+ if (!input) {
+  setStatus("Paste a YouTube Live or video link first.","error");
+  return;
+ }
+
+ const button = $("checkLiveBtn");
+ button.disabled = true;
+
+ if (chatVideoUrl !== input) {
   stopChatMonitoring();
   resetChatDashboard();
-  chatVideoUrl="";
+  chatVideoUrl = "";
  }
- clearLiveResult();$("livePanel").hidden=false;
- $("liveHeading").textContent="Checking YouTube live status...";
- $("liveExplanation").textContent="VYRO is requesting live information from YouTube.";
- try{
-  const data=await youtubeRequest("/youtube/live-status",{url:input});
-  const state=(data.live_status||"unknown").toLowerCase();
-  const label=state==="live"?"🔴 LIVE NOW":state==="upcoming"?"UPCOMING":state==="not_live"?"NOT LIVE":"Unknown";
-  $("liveState").textContent=label;
-  $("liveViewers").textContent=data.concurrent_viewers?Number(data.concurrent_viewers).toLocaleString():"Unavailable";
-  $("liveChat").textContent=data.live_chat_available===true?"Available":data.live_chat_available===false?"Not available":"Unknown";
-  $("liveMessages").textContent=data.live_chat_messages==="not_read"?"Not being read":(data.live_chat_messages||"Not connected");
-  $("liveActualStart").textContent=formatDate(data.actual_start_time);
-  $("liveScheduledStart").textContent=formatDate(data.scheduled_start_time);
-  $("liveHeading").textContent=state==="live"?"LivePulse — Stream is live":state==="upcoming"?"LivePulse — Upcoming stream":"LivePulse — Status checked";
-  $("liveDot").style.background=state==="live"?"var(--red)":"var(--cyan)";
-  $("liveExplanation").textContent=(data.message||"Live status check completed.")+" Chat availability does not automatically mean messages are being read.";
 
-  if(data.title)renderYoutubeInfo(data);
-  $("youtubeLiveStatus").textContent="Live status: "+label+" | Live chat: "+(data.live_chat_available?"Available":"Not available");
+ clearLiveResult();
+ $("livePanel").hidden = false;
 
-  // THE MAIN FIX: reveal the dashboard when chat is available.
-  if(data.live_chat_available===true){
-   $("chatDashboard").hidden=false;
-   $("chatMonitorStatus").textContent="Live chat is available. Press Start live monitoring to analyse messages.";
-   $("startChatBtn").disabled=false;
-  }else{
-   $("chatDashboard").hidden=true;
+ $("liveHeading").textContent =
+  "Checking YouTube live status...";
+
+ $("liveExplanation").textContent =
+  "VYRO is requesting live information from YouTube.";
+
+ try {
+  const data = await youtubeRequest(
+   "/youtube/live-status",
+   {url:input}
+  );
+
+  const state = (data.live_status || "unknown").toLowerCase();
+
+  const label =
+   state === "live" ? "🔴 LIVE NOW" :
+   state === "upcoming" ? "UPCOMING" :
+   state === "not_live" ? "NOT LIVE" :
+   "Unknown";
+
+  $("liveState").textContent = label;
+
+  $("liveViewers").textContent =
+   data.concurrent_viewers
+    ? Number(data.concurrent_viewers).toLocaleString()
+    : "Unavailable";
+
+  $("liveChat").textContent =
+   data.live_chat_available === true ? "Available" :
+   data.live_chat_available === false ? "Not available" :
+   "Unknown";
+
+  $("liveMessages").textContent =
+   data.live_chat_messages === "not_read"
+    ? "Not being read"
+    : (data.live_chat_messages || "Not connected");
+
+  $("liveActualStart").textContent =
+   formatDate(data.actual_start_time);
+
+  $("liveScheduledStart").textContent =
+   formatDate(data.scheduled_start_time);
+
+  $("liveHeading").textContent =
+   state === "live" ? "LivePulse — Stream is live" :
+   state === "upcoming" ? "LivePulse — Upcoming stream" :
+   "LivePulse — Status checked";
+
+  $("liveDot").style.background =
+   state === "live" ? "var(--red)" : "var(--cyan)";
+
+  $("liveExplanation").textContent =
+   (data.message || "Live status check completed.") +
+   " Chat availability does not automatically mean messages are being read.";
+
+  if (data.title) renderYoutubeInfo(data);
+
+  $("youtubeLiveStatus").textContent =
+   "Live status: " + label +
+   " | Live chat: " +
+   (data.live_chat_available ? "Available" : "Not available");
+
+  if (data.live_chat_available === true) {
+   $("chatDashboard").hidden = false;
+
+   $("chatMonitorStatus").textContent =
+    "Live chat is available. Press Start live monitoring to analyse messages.";
+
+   $("startChatBtn").disabled = false;
+
+  } else {
+   $("chatDashboard").hidden = true;
   }
 
   setStatus("LivePulse check completed successfully.","success");
- }catch(error){
-  $("liveHeading").textContent="LivePulse check failed";
-  $("liveExplanation").textContent=error.message;
-  $("chatDashboard").hidden=true;
-  setStatus("LivePulse error: "+error.message,"error");
- }finally{button.disabled=false;}
+
+ } catch(error) {
+  $("liveHeading").textContent = "LivePulse check failed";
+  $("liveExplanation").textContent = error.message;
+  $("chatDashboard").hidden = true;
+
+  setStatus("LivePulse error: " + error.message,"error");
+
+ } finally {
+  button.disabled = false;
+ }
 }
 
+
+// =========================================================
 // LIVE CHAT FETCH AND MONITORING
-async function fetchChatOnce(expectedEpoch,allowUrlSwitch=false){
- if(chatBusy)return null;
- const input=$("youtubeUrl").value.trim();
- if(!input){$("chatMonitorStatus").textContent="Enter a YouTube link first.";return null;}
- if(chatVideoUrl&&chatVideoUrl!==input){
-  if(!allowUrlSwitch){
-   stopChatMonitoring();
-   $("chatMonitorStatus").textContent="The YouTube link changed. Stop and start monitoring again for the new stream.";
-   return null;
-  }
-  stopChatMonitoring();resetChatDashboard();chatVideoUrl=input;
-  $("chatDashboard").hidden=false;
- }
- if(!chatVideoUrl)chatVideoUrl=input;
- const epoch=chatEpoch;
- if(expectedEpoch!==undefined&&expectedEpoch!==epoch)return null;
- chatBusy=true;$("refreshChatBtn").disabled=true;
- const pageTokenUsed=chatPageToken;
- const pageKey=pageTokenUsed||"FIRST_PAGE";
- try{
-  const payload={url:chatVideoUrl};
-  if(pageTokenUsed)payload.page_token=pageTokenUsed;
-  const data=await youtubeRequest("/youtube/live-chat",payload);
-  if(epoch!==chatEpoch)return null;
-  if(data.chat_available===false){
-   stopChatMonitoring();
-   $("chatMonitorStatus").textContent=data.message||"No active chat is available for this stream.";
-   $("liveChat").textContent="Not available";$("liveMessages").textContent="Unavailable";
-   return null;
-  }
-  const added=processChatBatch(data,pageKey);
-  chatPageToken=data.next_page_token||null;
-  const interval=Math.max(1000,Number(data.polling_interval_ms)||5000);
-  $("liveChat").textContent="Available";
-  $("liveMessages").textContent=chatMessageTotal.toLocaleString()+" analysed";
-  $("livePanel").hidden=false;
-  $("chatDashboard").hidden=false;
+// =========================================================
 
-  if(chatRunning&&!chatPageToken){
+async function fetchChatOnce(expectedEpoch,allowUrlSwitch=false) {
+ if (chatBusy) return null;
+
+ const input = $("youtubeUrl").value.trim();
+
+ if (!input) {
+  $("chatMonitorStatus").textContent =
+   "Enter a YouTube link first.";
+  return null;
+ }
+
+ if (chatVideoUrl && chatVideoUrl !== input) {
+  if (!allowUrlSwitch) {
    stopChatMonitoring();
-   $("chatMonitorStatus").textContent="YouTube did not provide another chat page token. Your results are saved. Press Fetch chat now to request a fresh snapshot.";
-  }else{
-   $("chatMonitorStatus").textContent=
-    (added?"New chat page analysed. ":"This chat page was already counted. ")+
-    (chatRunning?"Next check in about "+(interval/1000).toFixed(1)+" seconds.":"Monitoring is stopped.");
+
+   $("chatMonitorStatus").textContent =
+    "The YouTube link changed. Stop and start monitoring again.";
+
+   return null;
   }
+
+  stopChatMonitoring();
+  resetChatDashboard();
+  chatVideoUrl = input;
+
+  $("chatDashboard").hidden = false;
+ }
+
+ if (!chatVideoUrl) chatVideoUrl = input;
+
+ const epoch = chatEpoch;
+
+ if (expectedEpoch !== undefined && expectedEpoch !== epoch) {
+  return null;
+ }
+
+ chatBusy = true;
+ $("refreshChatBtn").disabled = true;
+
+ const pageTokenUsed = chatPageToken;
+ const pageKey = pageTokenUsed || "FIRST_PAGE";
+
+ try {
+  const payload = {url:chatVideoUrl};
+
+  if (pageTokenUsed) {
+   payload.page_token = pageTokenUsed;
+  }
+
+  const data = await youtubeRequest(
+   "/youtube/live-chat",
+   payload
+  );
+
+  if (epoch !== chatEpoch) return null;
+
+  if (data.chat_available === false) {
+   stopChatMonitoring();
+
+   $("chatMonitorStatus").textContent =
+    data.message || "No active chat is available.";
+
+   $("liveChat").textContent = "Not available";
+   $("liveMessages").textContent = "Unavailable";
+
+   return null;
+  }
+
+  const added = processChatBatch(data,pageKey);
+
+  chatPageToken = data.next_page_token || null;
+
+  const interval = Math.max(
+   1000,
+   Number(data.polling_interval_ms) || 5000
+  );
+
+  $("liveChat").textContent = "Available";
+
+  $("liveMessages").textContent =
+   chatMessageTotal.toLocaleString() + " analysed";
+
+  $("livePanel").hidden = false;
+  $("chatDashboard").hidden = false;
+
+  if (chatRunning && !chatPageToken) {
+   stopChatMonitoring();
+
+   $("chatMonitorStatus").textContent =
+    "YouTube did not provide another chat page token. " +
+    "Your results are saved. Press Fetch chat now for a fresh snapshot.";
+
+  } else {
+   $("chatMonitorStatus").textContent =
+    (added ? "New chat page analysed. " : "This chat page was already counted. ") +
+    (chatRunning
+     ? "Next check in about " + (interval / 1000).toFixed(1) + " seconds."
+     : "Monitoring is stopped.");
+  }
+
   return interval;
- }catch(error){
-  if(epoch===chatEpoch){
-   $("chatMonitorStatus").textContent="Chat error: "+error.message;
-   if(chatRunning)stopChatMonitoring();
+
+ } catch(error) {
+  if (epoch === chatEpoch) {
+   $("chatMonitorStatus").textContent =
+    "Chat error: " + error.message;
+
+   if (chatRunning) stopChatMonitoring();
   }
+
   throw error;
- }finally{
-  chatBusy=false;
-  $("refreshChatBtn").disabled=false;
+
+ } finally {
+  chatBusy = false;
+  $("refreshChatBtn").disabled = false;
  }
 }
-async function scheduledChatPoll(epoch){
- if(!chatRunning||epoch!==chatEpoch)return;
- if(Date.now()-chatMonitorStartedAt>=CHAT_MAX_MONITOR_MS){
+
+async function scheduledChatPoll(epoch) {
+ if (!chatRunning || epoch !== chatEpoch) return;
+
+ if (Date.now() - chatMonitorStartedAt >= CHAT_MAX_MONITOR_MS) {
   stopChatMonitoring();
-  $("chatMonitorStatus").textContent="Automatic monitoring reached its 10-minute session limit. Your results are preserved. Start again if you want another session.";
+
+  $("chatMonitorStatus").textContent =
+   "Automatic monitoring reached its 10-minute session limit. " +
+   "Your results are preserved. Start again for another session.";
+
   return;
  }
- try{
-  const interval=await fetchChatOnce(epoch,false);
-  if(chatRunning&&epoch===chatEpoch){
-   chatTimer=setTimeout(()=>scheduledChatPoll(epoch),Math.max(1000,interval||5000));
+
+ try {
+  const interval = await fetchChatOnce(epoch,false);
+
+  if (chatRunning && epoch === chatEpoch) {
+   chatTimer = setTimeout(
+    () => scheduledChatPoll(epoch),
+    Math.max(1000,interval || 5000)
+   );
   }
- }catch(error){
-  if(epoch===chatEpoch){
-   $("chatMonitorStatus").textContent="Monitoring stopped: "+error.message;
+
+ } catch(error) {
+  if (epoch === chatEpoch) {
+   $("chatMonitorStatus").textContent =
+    "Monitoring stopped: " + error.message;
+
    stopChatMonitoring();
   }
  }
 }
-$("startChatBtn").addEventListener("click",async()=>{
- const input=$("youtubeUrl").value.trim();
- if(!input){$("chatMonitorStatus").textContent="Paste a YouTube Live link first.";return;}
- stopChatMonitoring();resetChatDashboard();
- chatVideoUrl=input;chatRunning=true;chatMonitorStartedAt=Date.now();
- $("chatDashboard").hidden=false;
- $("startChatBtn").disabled=true;$("stopChatBtn").disabled=false;
- $("chatMonitorStatus").textContent="Connecting to YouTube live chat...";
- const epoch=chatEpoch;
+
+$("startChatBtn").addEventListener("click",async() => {
+ const input = $("youtubeUrl").value.trim();
+
+ if (!input) {
+  $("chatMonitorStatus").textContent =
+   "Paste a YouTube Live link first.";
+  return;
+ }
+
+ stopChatMonitoring();
+ resetChatDashboard();
+
+ chatVideoUrl = input;
+ chatRunning = true;
+ chatMonitorStartedAt = Date.now();
+
+ $("chatDashboard").hidden = false;
+ $("startChatBtn").disabled = true;
+ $("stopChatBtn").disabled = false;
+
+ $("chatMonitorStatus").textContent =
+  "Connecting to YouTube live chat...";
+
+ const epoch = chatEpoch;
+
  await scheduledChatPoll(epoch);
 });
-$("stopChatBtn").addEventListener("click",()=>{
+
+$("stopChatBtn").addEventListener("click",() => {
  stopChatMonitoring();
- $("chatMonitorStatus").textContent="Live chat monitoring stopped. Existing results are still displayed.";
+
+ $("chatMonitorStatus").textContent =
+  "Live chat monitoring stopped. Existing results are still displayed.";
 });
-$("refreshChatBtn").addEventListener("click",async()=>{
- const input=$("youtubeUrl").value.trim();
- if(!input){$("chatMonitorStatus").textContent="Enter a YouTube link first.";return;}
- if(chatVideoUrl&&chatVideoUrl!==input){
-  stopChatMonitoring();resetChatDashboard();chatVideoUrl=input;
-  $("chatDashboard").hidden=false;
+
+$("refreshChatBtn").addEventListener("click",async() => {
+ const input = $("youtubeUrl").value.trim();
+
+ if (!input) {
+  $("chatMonitorStatus").textContent =
+   "Enter a YouTube link first.";
+  return;
  }
- if(!chatVideoUrl)chatVideoUrl=input;
- const epoch=chatEpoch;
- try{await fetchChatOnce(epoch,true);}catch(error){}
+
+ if (chatVideoUrl && chatVideoUrl !== input) {
+  stopChatMonitoring();
+  resetChatDashboard();
+  chatVideoUrl = input;
+
+  $("chatDashboard").hidden = false;
+ }
+
+ if (!chatVideoUrl) chatVideoUrl = input;
+
+ const epoch = chatEpoch;
+
+ try {
+  await fetchChatOnce(epoch,true);
+ } catch(error) {
+  // The status message is displayed by fetchChatOnce.
+ }
 });
 
-// CLEAR
-$("clearYoutubeBtn").addEventListener("click",()=>{
- stopChatMonitoring();resetChatDashboard();chatVideoUrl="";
- $("youtubeUrl").value="";clearYoutubeResult();clearLiveResult();
- setStatus("Paste a YouTube link and choose an action.","");
+
+// =========================================================
+// CLEAR YOUTUBE
+// =========================================================
+
+$("clearYoutubeBtn").addEventListener("click",() => {
+ stopChatMonitoring();
+ resetChatDashboard();
+
+ chatVideoUrl = "";
+
+ $("youtubeUrl").value = "";
+
+ clearYoutubeResult();
+ clearLiveResult();
+
+ setStatus(
+  "Paste a YouTube link and choose an action.",
+  ""
+ );
 });
 
+
+// =========================================================
 // VIDEO PROCESSING
-function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
-$("autoClipBtn").addEventListener("click",async()=>{
- const file=$("videoInput").files[0];
- if(!file){$("status").textContent="Please upload a video first.";return;}
- const button=$("autoClipBtn");button.disabled=true;
- $("resultsMessage").textContent="Processing your video...";$("clipResults").replaceChildren();
- try{
-  $("status").textContent="Connecting to VYRO CLIPS...";
-  const formData=new FormData();formData.append("video",file);
-  const uploadResponse=await fetch(API_BASE+"/upload",{method:"POST",body:formData});
-  if(!uploadResponse.ok)throw new Error("Upload failed: "+await uploadResponse.text());
-  const uploadData=await uploadResponse.json();currentJob=uploadData.job_id;
-  $("status").textContent="Upload complete. VYRO is analysing your video...";
-  const startedAt=Date.now(),timeout=30*60*1000;
-  while(true){
-   if(Date.now()-startedAt>timeout)throw new Error("Processing took too long. Please try again later.");
+// =========================================================
+
+function wait(ms) {
+ return new Promise(resolve => setTimeout(resolve,ms));
+}
+
+$("autoClipBtn").addEventListener("click",async() => {
+ const file = $("videoInput").files[0];
+
+ if (!file) {
+  $("status").textContent = "Please upload a video first.";
+  return;
+ }
+
+ const sourceMode = $("sourceMode").value;
+ const youtubeUrl = $("youtubeUrl").value.trim();
+
+ if (sourceMode === "youtube" && !youtubeUrl) {
+  $("status").textContent =
+   "You selected YouTube mode. Paste the matching YouTube link in section 02.";
+  return;
+ }
+
+ const button = $("autoClipBtn");
+ button.disabled = true;
+
+ $("resultsMessage").textContent =
+  "Processing your video...";
+
+ $("clipResults").replaceChildren();
+
+ currentJob = null;
+
+ try {
+  $("status").textContent =
+   "Connecting to VYRO CLIPS...";
+
+  const formData = new FormData();
+
+  formData.append("video",file);
+  formData.append("source_mode",sourceMode);
+
+  if (sourceMode === "youtube") {
+   formData.append("youtube_url",youtubeUrl);
+  }
+
+  const uploadResponse = await fetch(
+   API_BASE + "/upload",
+   {
+    method:"POST",
+    body:formData
+   }
+  );
+
+  if (!uploadResponse.ok) {
+   let message = "Upload failed.";
+
+   try {
+    const errorData = await uploadResponse.json();
+    message = errorData.detail || message;
+   } catch {
+    message = await uploadResponse.text();
+   }
+
+   throw new Error(message);
+  }
+
+  const uploadData = await uploadResponse.json();
+
+  currentJob = uploadData.job_id;
+
+  if (!currentJob) {
+   throw new Error("The server did not return a processing job ID.");
+  }
+
+  $("status").textContent =
+   "Upload complete. VYRO is analysing your video...";
+
+  const startedAt = Date.now();
+  const timeout = 30 * 60 * 1000;
+
+  while (true) {
+   if (Date.now() - startedAt > timeout) {
+    throw new Error(
+     "Processing took too long. Please try again later."
+    );
+   }
+
    await wait(5000);
-   const response=await fetch(API_BASE+"/status/"+encodeURIComponent(currentJob));
-   if(!response.ok)throw new Error("Could not check processing status.");
-   const data=await response.json();
-   if(data.status==="completed"){
-    displayClips(data.clips||[]);
-    $("status").textContent="Finished! "+(data.clips||[]).length+" clips generated.";
+
+   const response = await fetch(
+    API_BASE + "/status/" + encodeURIComponent(currentJob)
+   );
+
+   if (!response.ok) {
+    throw new Error("Could not check processing status.");
+   }
+
+   const data = await response.json();
+
+   if (data.status === "completed") {
+    displayClips(data.clips || [],data);
+
+    $("status").textContent =
+     "Finished! " + (data.clips || []).length +
+     " clips generated.";
+
     break;
    }
-   if(data.status==="failed")throw new Error(data.error||"Video processing failed.");
-   const progress=Number.isFinite(Number(data.progress))?" | "+data.progress+"%":"";
-   $("status").textContent="VYRO is analysing your video... Stage: "+(data.stage||data.status)+progress;
+
+   if (data.status === "failed") {
+    throw new Error(data.error || "Video processing failed.");
+   }
+
+   const progress = Number.isFinite(Number(data.progress))
+    ? " | " + data.progress + "%"
+    : "";
+
+   $("status").textContent =
+    "VYRO is analysing your video... Stage: " +
+    (data.stage || data.status) + progress;
   }
- }catch(error){
-  $("status").textContent="Error: "+error.message;
-  $("resultsMessage").textContent="No finished clips yet. Please check the error above.";
- }finally{button.disabled=false;}
+
+ } catch(error) {
+  $("status").textContent =
+   "Error: " + error.message;
+
+  $("resultsMessage").textContent =
+   "No finished clips yet. Please check the error above.";
+
+ } finally {
+  button.disabled = false;
+ }
 });
-function displayClips(clips){
- const container=$("clipResults");container.replaceChildren();
- if(!clips.length){$("resultsMessage").textContent="The analysis finished, but no clips were generated.";return;}
- $("resultsMessage").textContent=clips.length+" generated clips are ready.";
- clips.forEach(clip=>{
-  const card=document.createElement("div");card.className="clipcard";
-  const title=document.createElement("h4");title.textContent="VYRO CLIP "+clip.clip;
-  const details=document.createElement("p");details.textContent=time(clip.start)+" – "+time(clip.end)+" | Highlight score: "+clip.score;
-  const player=document.createElement("video");player.src=API_BASE+clip.download;player.controls=true;player.playsInline=true;player.preload="metadata";
-  const download=document.createElement("a");download.href=API_BASE+clip.download;download.download="VYRO-CLIP-"+clip.clip+".mp4";download.textContent="⬇ Download clip";download.className="btn download";
+
+
+// =========================================================
+// DISPLAY GENERATED CLIPS
+// =========================================================
+
+function displayClips(clips,jobData={}) {
+ const container = $("clipResults");
+
+ container.replaceChildren();
+
+ if (!clips.length) {
+  $("resultsMessage").textContent =
+   "The analysis finished, but no clips were generated.";
+  return;
+ }
+
+ const sourceLabel =
+  jobData.source_mode === "youtube"
+   ? "YouTube-linked footage"
+   : "Direct video upload";
+
+ $("resultsMessage").textContent =
+  clips.length + " generated clips are ready. Source: " + sourceLabel + ".";
+
+ clips.forEach(clip => {
+  const card = document.createElement("div");
+  card.className = "clipcard";
+
+  const title = document.createElement("h4");
+  title.textContent = "VYRO CLIP " + clip.clip;
+
+  const details = document.createElement("p");
+
+  details.textContent =
+   time(clip.start) + " – " +
+   time(clip.end) +
+   " | Highlight score: " + clip.score;
+
+  const player = document.createElement("video");
+
+  player.src = API_BASE + clip.download;
+  player.controls = true;
+  player.playsInline = true;
+  player.preload = "metadata";
+
+  const download = document.createElement("a");
+
+  download.href = API_BASE + clip.download;
+  download.download = "VYRO-CLIP-" + clip.clip + ".mp4";
+  download.textContent = "⬇ Download clip";
+  download.className = "btn download";
+
   card.append(title,details,player,download);
-  if(clip.transcript){const transcript=document.createElement("p");transcript.textContent="Transcript: "+clip.transcript;transcript.style.marginTop="12px";card.appendChild(transcript);}
+
+  if (clip.transcript) {
+   const transcript = document.createElement("p");
+
+   transcript.textContent =
+    "Transcript: " + clip.transcript;
+
+   transcript.style.marginTop = "12px";
+
+   card.appendChild(transcript);
+  }
+
   container.appendChild(card);
  });
 }
-window.addEventListener("beforeunload",()=>{
+
+
+// =========================================================
+// CLEANUP
+// =========================================================
+
+window.addEventListener("beforeunload",() => {
  stopChatMonitoring();
- if(videoURL)URL.revokeObjectURL(videoURL);
+
+ if (videoURL) {
+  URL.revokeObjectURL(videoURL);
+ }
 });
+
 </script>
 </body>
-</html>
+  </html>
