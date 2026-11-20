@@ -4,8 +4,8 @@ import os
 import re
 import sqlite3
 import subprocess
-import time
 import uuid
+import time
 
 from pathlib import Path
 from collections import Counter
@@ -15,7 +15,7 @@ from urllib.parse import urlparse, parse_qs, urlencode
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -25,11 +25,11 @@ from scenedetect.detectors import ContentDetector
 
 
 # =========================================================
-# VYRO CLIPS 3.4
-# AI HIGHLIGHTS + YOUTUBE INSPECTOR + LIVEPULSE + CHAT
+# VYRO CLIPS 4.0
+# UPLOAD + YOUTUBE INSPECTOR + LIVEPULSE + CHAT
 # =========================================================
 
-VERSION = "3.4"
+VERSION = "4.0"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vyro")
@@ -38,8 +38,8 @@ app = FastAPI(
     title="VYRO CLIPS API",
     version=VERSION,
     description=(
-        "AI video highlight generation, YouTube metadata, "
-        "live status and accessible live-chat analysis."
+        "Video highlight generation, YouTube inspection, "
+        "LivePulse and live-chat analysis."
     )
 )
 
@@ -60,11 +60,11 @@ OUTPUTS.mkdir(parents=True, exist_ok=True)
 
 MAX_UPLOAD_SIZE = 250 * 1024 * 1024
 MAX_CLIPS = 5
+ALLOWED_EXTENSIONS = {".mp4", ".mov", ".mkv", ".webm"}
 
 executor = ThreadPoolExecutor(max_workers=1)
 whisper_model = None
 
-# Keep this key only in Render environment variables.
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "").strip()
 
 YOUTUBE_HOSTS = {
@@ -98,50 +98,30 @@ class YouTubeLiveChatRequest(BaseModel):
 
 def extract_youtube_video_id(raw_url):
     if not isinstance(raw_url, str) or not raw_url.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Please provide a YouTube video URL."
-        )
+        raise HTTPException(400, "Please provide a YouTube URL.")
 
     raw_url = raw_url.strip()
 
     if len(raw_url) > 2048:
-        raise HTTPException(
-            status_code=400,
-            detail="The supplied URL is too long."
-        )
+        raise HTTPException(400, "The supplied URL is too long.")
 
     try:
         parsed = urlparse(raw_url)
-
         if parsed.port:
-            raise HTTPException(
-                status_code=400,
-                detail="This YouTube URL format is not supported."
-            )
-
+            raise HTTPException(400, "Unsupported YouTube URL.")
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid URL.")
+        raise HTTPException(400, "Invalid URL.")
 
     if parsed.scheme.lower() != "https":
-        raise HTTPException(
-            status_code=400,
-            detail="Please use a secure HTTPS YouTube URL."
-        )
+        raise HTTPException(400, "Please use an HTTPS YouTube URL.")
 
     if parsed.username or parsed.password:
-        raise HTTPException(
-            status_code=400,
-            detail="This YouTube URL format is not supported."
-        )
+        raise HTTPException(400, "Unsupported YouTube URL.")
 
     host = (parsed.hostname or "").lower()
 
     if host not in YOUTUBE_HOSTS:
-        raise HTTPException(
-            status_code=400,
-            detail="Only supported YouTube URLs are accepted."
-        )
+        raise HTTPException(400, "Only supported YouTube URLs are accepted.")
 
     parts = [part for part in parsed.path.split("/") if part]
     video_id = None
@@ -158,11 +138,8 @@ def extract_youtube_video_id(raw_url):
 
     if not video_id or not VIDEO_ID_PATTERN.fullmatch(video_id):
         raise HTTPException(
-            status_code=400,
-            detail=(
-                "Could not identify a valid YouTube video ID. "
-                "Use a supported video, Shorts or live-video URL."
-            )
+            400,
+            "Could not identify a valid YouTube video ID."
         )
 
     return video_id
@@ -176,17 +153,14 @@ def canonical_youtube_url(video_id):
 
 
 # =========================================================
-# YOUTUBE HTTP REQUESTS
+# YOUTUBE API
 # =========================================================
 
 def youtube_api_get(endpoint, params):
     if not YOUTUBE_API_KEY:
         raise HTTPException(
-            status_code=503,
-            detail=(
-                "YouTube API key is not configured on the server. "
-                "Check YOUTUBE_API_KEY in Render environment variables."
-            )
+            503,
+            "YouTube API key is not configured on the server."
         )
 
     request_params = dict(params)
@@ -217,26 +191,16 @@ def youtube_api_get(endpoint, params):
             body = json.loads(
                 error.read(256 * 1024).decode("utf-8")
             )
-            api_error = body.get("error", {})
-            errors = api_error.get("errors", [])
+            errors = body.get("error", {}).get("errors", [])
             if errors:
                 reason = errors[0].get("reason", "")
         except Exception:
             pass
 
-        logger.warning(
-            "YouTube API error: HTTP %s, reason=%s",
-            error.code,
-            reason
-        )
-
         if reason == "quotaExceeded":
             raise HTTPException(
-                status_code=429,
-                detail=(
-                    "YouTube API quota has been reached. "
-                    "Please try again after the quota resets."
-                )
+                429,
+                "YouTube API quota reached. Please try again later."
             )
 
         if reason in {
@@ -245,43 +209,31 @@ def youtube_api_get(endpoint, params):
             "liveChatNotFound"
         }:
             raise HTTPException(
-                status_code=409,
-                detail=(
-                    "This live chat is disabled, has ended "
-                    "or is unavailable."
-                )
+                409,
+                "This live chat is disabled, ended or unavailable."
             )
 
         if error.code == 403:
             raise HTTPException(
-                status_code=403,
-                detail=(
-                    "YouTube denied access. Check API key restrictions, "
-                    "API activation and available quota."
-                )
+                403,
+                "YouTube denied access. Check the API key and quota."
             )
 
         if error.code == 404:
-            raise HTTPException(
-                status_code=404,
-                detail="The requested YouTube resource was not found."
-            )
+            raise HTTPException(404, "YouTube resource not found.")
 
-        raise HTTPException(
-            status_code=502,
-            detail="YouTube returned an API error. Please try again."
-        )
+        raise HTTPException(502, "YouTube returned an API error.")
 
     except (URLError, TimeoutError):
         raise HTTPException(
-            status_code=502,
-            detail="Could not connect to YouTube. Please try again."
+            502,
+            "Could not connect to YouTube. Please try again."
         )
 
     except (ValueError, UnicodeDecodeError):
         raise HTTPException(
-            status_code=502,
-            detail="YouTube returned an invalid response."
+            502,
+            "YouTube returned an invalid response."
         )
 
 
@@ -294,10 +246,7 @@ def fetch_youtube_metadata(video_id):
 
     oembed_url = (
         "https://www.youtube.com/oembed?"
-        + urlencode({
-            "url": video_url,
-            "format": "json"
-        })
+        + urlencode({"url": video_url, "format": "json"})
     )
 
     request = Request(
@@ -314,30 +263,16 @@ def fetch_youtube_metadata(video_id):
     except HTTPError as error:
         if error.code in (400, 401, 403, 404):
             raise HTTPException(
-                status_code=422,
-                detail=(
-                    "YouTube could not provide public information "
-                    "for this video. It may be private, restricted "
-                    "or unavailable."
-                )
+                422,
+                "YouTube could not provide public information for this video."
             )
-
-        raise HTTPException(
-            status_code=502,
-            detail="YouTube metadata service returned an error."
-        )
+        raise HTTPException(502, "YouTube metadata service error.")
 
     except (URLError, TimeoutError):
-        raise HTTPException(
-            status_code=502,
-            detail="Could not reach YouTube. Please try again."
-        )
+        raise HTTPException(502, "Could not reach YouTube.")
 
     except (ValueError, UnicodeDecodeError):
-        raise HTTPException(
-            status_code=502,
-            detail="YouTube returned invalid metadata."
-        )
+        raise HTTPException(502, "YouTube returned invalid metadata.")
 
     return {
         "ok": True,
@@ -352,15 +287,14 @@ def fetch_youtube_metadata(video_id):
         "live_chat": "not_checked",
         "footage_access": "not_provided",
         "message": (
-            "Public video information retrieved. "
-            "Live status and chat have not been checked. "
-            "This endpoint does not retrieve video footage."
+            "Video information retrieved. Upload matching footage "
+            "that you own or are authorised to use to create clips."
         )
     }
 
 
 # =========================================================
-# LIVEPULSE — LIVE STATUS
+# LIVEPULSE
 # =========================================================
 
 def fetch_youtube_live_status(video_id):
@@ -375,10 +309,7 @@ def fetch_youtube_live_status(video_id):
     items = data.get("items", [])
 
     if not items:
-        raise HTTPException(
-            status_code=404,
-            detail="YouTube did not return this video."
-        )
+        raise HTTPException(404, "YouTube did not return this video.")
 
     item = items[0]
     snippet = item.get("snippet", {})
@@ -407,9 +338,8 @@ def fetch_youtube_live_status(video_id):
         "live_chat_messages": "not_read",
         "footage_access": "not_provided",
         "message": (
-            "Live status checked using YouTube Data API. "
-            "This endpoint does not read chat messages "
-            "or retrieve video footage."
+            "Live status checked. Chat availability does not provide "
+            "access to the video footage."
         )
     }
 
@@ -425,7 +355,7 @@ def fetch_youtube_live_status(video_id):
 
 
 # =========================================================
-# LIVE CHAT INTELLIGENCE
+# LIVE CHAT ANALYSIS
 # =========================================================
 
 def analyse_live_chat_messages(items, actual_start_time=None):
@@ -470,12 +400,10 @@ def analyse_live_chat_messages(items, actual_start_time=None):
 
         message_text = re.sub(
             r"\s+", " ", str(message_text)
-        ).strip()
+        ).strip()[:500]
 
         if not message_text:
             continue
-
-        message_text = message_text[:500]
 
         published_at = snippet.get("publishedAt")
         relative_seconds = None
@@ -490,7 +418,7 @@ def analyse_live_chat_messages(items, actual_start_time=None):
                     int((published_dt - start_dt).total_seconds())
                 )
             except (ValueError, TypeError):
-                relative_seconds = None
+                pass
 
         lowered = message_text.lower()
 
@@ -511,12 +439,7 @@ def analyse_live_chat_messages(items, actual_start_time=None):
         question_count += int(is_question)
         reaction_count += int(is_reaction)
 
-        words = re.findall(
-            r"[a-zA-Z]{3,}",
-            lowered
-        )
-
-        for word in words:
+        for word in re.findall(r"[a-zA-Z]{3,}", lowered):
             if word not in stop_words:
                 topics[word] += 1
 
@@ -560,10 +483,7 @@ def analyse_live_chat_messages(items, actual_start_time=None):
             "score": round(score, 2)
         })
 
-    moments.sort(
-        key=lambda item: item["score"],
-        reverse=True
-    )
+    moments.sort(key=lambda item: item["score"], reverse=True)
 
     top_topics = [
         {"word": word, "count": count}
@@ -593,29 +513,23 @@ def fetch_youtube_live_chat(video_id, page_token=None):
     video_items = video_data.get("items", [])
 
     if not video_items:
-        raise HTTPException(
-            status_code=404,
-            detail="YouTube could not find this video."
-        )
+        raise HTTPException(404, "YouTube could not find this video.")
 
     video = video_items[0]
     snippet = video.get("snippet", {})
     details = video.get("liveStreamingDetails", {})
-
     chat_id = details.get("activeLiveChatId")
 
     if not chat_id:
         return {
             "ok": True,
             "chat_available": False,
-            "live_status": snippet.get(
-                "liveBroadcastContent", "none"
-            ),
+            "live_status": snippet.get("liveBroadcastContent", "none"),
             "title": snippet.get("title"),
             "channel": snippet.get("channelTitle"),
             "message": (
-                "YouTube did not provide an active live-chat ID. "
-                "The stream may not be live or chat may be unavailable."
+                "No active live-chat ID was provided by YouTube. "
+                "The stream may have ended or chat may be unavailable."
             ),
             "messages": {
                 "message_count": 0,
@@ -635,11 +549,7 @@ def fetch_youtube_live_chat(video_id, page_token=None):
 
     if page_token:
         if len(page_token) > 2048:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid chat page token."
-            )
-
+            raise HTTPException(400, "Invalid chat page token.")
         chat_params["pageToken"] = page_token
 
     chat_data = youtube_api_get(
@@ -647,10 +557,8 @@ def fetch_youtube_live_chat(video_id, page_token=None):
         chat_params
     )
 
-    items = chat_data.get("items", [])
-
     analysis = analyse_live_chat_messages(
-        items,
+        chat_data.get("items", []),
         details.get("actualStartTime")
     )
 
@@ -661,17 +569,13 @@ def fetch_youtube_live_chat(video_id, page_token=None):
         "video_id": video_id,
         "title": snippet.get("title"),
         "channel": snippet.get("channelTitle"),
-        "live_status": snippet.get(
-            "liveBroadcastContent", "none"
-        ),
+        "live_status": snippet.get("liveBroadcastContent", "none"),
         "messages": analysis,
-        "polling_interval_ms": chat_data.get(
-            "pollingIntervalMillis"
-        ),
+        "polling_interval_ms": chat_data.get("pollingIntervalMillis"),
         "next_page_token": chat_data.get("nextPageToken"),
         "message": (
-            "Live chat page analysed. VYRO does not store "
-            "chat messages or author identities."
+            "Live chat page analysed. Chat timestamps are not "
+            "verified video clip timestamps."
         )
     }
 
@@ -681,10 +585,7 @@ def fetch_youtube_live_chat(video_id, page_token=None):
 # =========================================================
 
 def get_db():
-    connection = sqlite3.connect(
-        DATABASE,
-        timeout=30
-    )
+    connection = sqlite3.connect(DATABASE, timeout=30)
     connection.row_factory = sqlite3.Row
     return connection
 
@@ -703,15 +604,16 @@ def init_db():
 
         columns = {
             row["name"]
-            for row in db.execute(
-                "PRAGMA table_info(jobs)"
-            ).fetchall()
+            for row in db.execute("PRAGMA table_info(jobs)").fetchall()
         }
 
         additions = {
             "stage": "TEXT DEFAULT 'queued'",
             "progress": "INTEGER DEFAULT 0",
-            "timings": "TEXT DEFAULT '{}'"
+            "timings": "TEXT DEFAULT '{}'",
+            "source_mode": "TEXT DEFAULT 'upload'",
+            "youtube_url": "TEXT",
+            "video_name": "TEXT"
         }
 
         for name, definition in additions.items():
@@ -721,14 +623,25 @@ def init_db():
                 )
 
 
-def create_job(job_id):
+def create_job(job_id, source_mode, youtube_url, video_name):
     with get_db() as db:
         db.execute(
             """
-            INSERT INTO jobs (job_id, status, stage, progress)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO jobs (
+                job_id, status, stage, progress,
+                source_mode, youtube_url, video_name
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (job_id, "queued", "Waiting", 0)
+            (
+                job_id,
+                "queued",
+                "Waiting",
+                0,
+                source_mode,
+                youtube_url,
+                video_name
+            )
         )
 
 
@@ -794,7 +707,7 @@ def recover_interrupted_jobs():
 
 
 # =========================================================
-# WHISPER MODEL
+# WHISPER
 # =========================================================
 
 def get_whisper():
@@ -852,7 +765,7 @@ def detect_scenes(video_path):
 
 
 # =========================================================
-# AI HIGHLIGHT SCORING
+# HIGHLIGHT SCORING
 # =========================================================
 
 STRONG_PHRASES = [
@@ -887,9 +800,7 @@ EMOTION_WORDS = [
     "unbelievable", "serious", "dangerous"
 ]
 
-FILLER_WORDS = [
-    "um", "uh", "erm", "basically", "literally"
-]
+FILLER_WORDS = ["um", "uh", "erm", "basically", "literally"]
 
 
 def count_phrases(text, phrases):
@@ -942,10 +853,7 @@ def score_highlight(transcript, relevant, window_duration):
         score -= 1.5
 
     filler_count = sum(
-        len(re.findall(
-            r"\b" + re.escape(filler) + r"\b",
-            text
-        ))
+        len(re.findall(r"\b" + re.escape(filler) + r"\b", text))
         for filler in FILLER_WORDS
     )
 
@@ -966,7 +874,6 @@ def build_candidates(speech, duration):
 
     target_length = min(35, max(12, duration * 0.32))
     target_length = min(target_length, duration)
-
     step = max(5, target_length * 0.5)
 
     starts = []
@@ -1079,7 +986,7 @@ def select_best_candidates(candidates):
 
 
 # =========================================================
-# VIDEO ANALYSIS AND CLIP EXPORT
+# VIDEO PROCESSING
 # =========================================================
 
 def analyse_video(job_id, video_path):
@@ -1146,12 +1053,6 @@ def analyse_video(job_id, video_path):
             2
         )
 
-        logger.info(
-            "Job %s transcription completed in %.2f seconds",
-            job_id,
-            timings["transcription_seconds"]
-        )
-
         update_job(
             job_id,
             stage="Finding interesting moments",
@@ -1160,7 +1061,6 @@ def analyse_video(job_id, video_path):
         )
 
         selection_start = time.perf_counter()
-
         candidates = build_candidates(speech, duration)
 
         if not candidates and duration >= 120:
@@ -1186,10 +1086,7 @@ def analyse_video(job_id, video_path):
                         })
 
             except Exception:
-                logger.exception(
-                    "Scene detection failed for job %s",
-                    job_id
-                )
+                logger.exception("Scene detection failed for %s", job_id)
 
         if not candidates:
             candidates.append({
@@ -1252,9 +1149,7 @@ def analyse_video(job_id, video_path):
             )
 
             if not output.is_file() or output.stat().st_size == 0:
-                raise Exception(
-                    f"Clip {index} was not exported correctly."
-                )
+                raise Exception(f"Clip {index} was not exported correctly.")
 
             results.append({
                 "clip": index,
@@ -1265,9 +1160,7 @@ def analyse_video(job_id, video_path):
                 "download": f"/clips/{output.name}"
             })
 
-            progress = 65 + int(
-                index / len(selected) * 30
-            )
+            progress = 65 + int(index / len(selected) * 30)
 
             update_job(
                 job_id,
@@ -1288,12 +1181,6 @@ def analyse_video(job_id, video_path):
             2
         )
 
-        logger.info(
-            "Job %s completed: %s",
-            job_id,
-            timings
-        )
-
         update_job(
             job_id,
             status="completed",
@@ -1302,6 +1189,8 @@ def analyse_video(job_id, video_path):
             clips=results,
             timings=timings
         )
+
+        logger.info("Job %s completed: %s", job_id, timings)
 
     except Exception as error:
         logger.exception("Processing failed for job %s", job_id)
@@ -1329,12 +1218,15 @@ def home():
         ),
         "features": {
             "video_upload": True,
+            "direct_upload_clipping": True,
+            "youtube_link_with_authorised_footage": True,
             "ai_highlight_detection": True,
             "clip_export": True,
             "youtube_inspector": True,
             "youtube_live_status": True,
             "youtube_chat_reading": True,
-            "youtube_footage_download": False
+            "youtube_footage_download": False,
+            "chat_timestamp_video_sync": False
         }
     }
 
@@ -1371,21 +1263,38 @@ def youtube_live_chat(request: YouTubeLiveChatRequest):
 
 
 @app.post("/upload")
-async def upload_video(video: UploadFile = File(...)):
+async def upload_video(
+    video: UploadFile = File(...),
+    source_mode: str = Form("upload"),
+    youtube_url: str = Form("")
+):
     filename = video.filename or ""
+    extension = Path(filename).suffix.lower()
 
-    if not filename.lower().endswith(
-        (".mp4", ".mov", ".mkv", ".webm")
-    ):
+    if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
-            status_code=400,
-            detail="Unsupported video format."
+            400,
+            "Unsupported video format. Use MP4, MOV, MKV or WEBM."
         )
 
-    job_id = str(uuid.uuid4())
-    extension = Path(filename).suffix.lower()
-    video_path = UPLOADS / f"{job_id}{extension}"
+    if source_mode not in {"upload", "youtube"}:
+        raise HTTPException(400, "Invalid video source mode.")
 
+    youtube_url = youtube_url.strip()
+
+    if source_mode == "youtube":
+        if not youtube_url:
+            raise HTTPException(
+                400,
+                "Please provide the YouTube link for this footage."
+            )
+        extract_youtube_video_id(youtube_url)
+
+    elif youtube_url:
+        extract_youtube_video_id(youtube_url)
+
+    job_id = str(uuid.uuid4())
+    video_path = UPLOADS / f"{job_id}{extension}"
     total_size = 0
 
     try:
@@ -1400,19 +1309,21 @@ async def upload_video(video: UploadFile = File(...)):
 
                 if total_size > MAX_UPLOAD_SIZE:
                     raise HTTPException(
-                        status_code=413,
-                        detail="Video exceeds the 250 MB upload limit."
+                        413,
+                        "Video exceeds the 250 MB upload limit."
                     )
 
                 buffer.write(chunk)
 
         if total_size == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Uploaded video is empty."
-            )
+            raise HTTPException(400, "Uploaded video is empty.")
 
-        create_job(job_id)
+        create_job(
+            job_id,
+            source_mode,
+            youtube_url or None,
+            filename[:255]
+        )
 
         executor.submit(
             analyse_video,
@@ -1423,9 +1334,10 @@ async def upload_video(video: UploadFile = File(...)):
         return {
             "job_id": job_id,
             "status": "queued",
-            "message": (
-                "Video uploaded. VYRO AI analysis started."
-            )
+            "source_mode": source_mode,
+            "youtube_url": youtube_url or None,
+            "video_name": filename[:255],
+            "message": "Video uploaded. VYRO analysis started."
         }
 
     except HTTPException:
@@ -1434,13 +1346,8 @@ async def upload_video(video: UploadFile = File(...)):
 
     except Exception as error:
         video_path.unlink(missing_ok=True)
-
         logger.exception("Upload failed")
-
-        raise HTTPException(
-            status_code=500,
-            detail=f"Upload failed: {str(error)}"
-        )
+        raise HTTPException(500, f"Upload failed: {str(error)}")
 
     finally:
         await video.close()
@@ -1451,17 +1358,18 @@ def job_status(job_id: str):
     job = get_job(job_id)
 
     if job is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Job not found."
-        )
+        raise HTTPException(404, "Job not found.")
 
     response = {
+        "job_id": job["job_id"],
         "status": job["status"],
         "clips": json.loads(job["clips"]),
         "stage": job["stage"],
         "progress": job["progress"],
-        "timings": json.loads(job["timings"] or "{}")
+        "timings": json.loads(job["timings"] or "{}"),
+        "source_mode": job["source_mode"],
+        "youtube_url": job["youtube_url"],
+        "video_name": job["video_name"]
     }
 
     if job["error"]:
@@ -1473,21 +1381,18 @@ def job_status(job_id: str):
 @app.get("/clips/{filename}")
 def download_clip(filename: str):
     if Path(filename).name != filename:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid filename."
-        )
+        raise HTTPException(400, "Invalid filename.")
+
+    if not filename.lower().endswith(".mp4"):
+        raise HTTPException(400, "Invalid clip file.")
 
     path = OUTPUTS / filename
 
     if not path.is_file():
-        raise HTTPException(
-            status_code=404,
-            detail="Clip not found."
-        )
+        raise HTTPException(404, "Clip not found.")
 
     return FileResponse(
         path,
         media_type="video/mp4",
         filename=filename
-)
+        )
