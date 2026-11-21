@@ -265,7 +265,6 @@ footer{
 
 <div class="grid">
 
-<!-- YOUTUBE INSPECTOR -->
 <section class="card full">
   <h2>01 — YouTube Inspector</h2>
   <p class="sub">
@@ -273,8 +272,7 @@ footer{
   </p>
 
   <label for="youtubeUrl">YouTube video or live URL</label>
-  <input id="youtubeUrl"
-    type="url"
+  <input id="youtubeUrl" type="url"
     placeholder="https://www.youtube.com/watch?v=..."
     autocomplete="url">
 
@@ -305,7 +303,6 @@ footer{
   </div>
 </section>
 
-<!-- LIVE CHAT -->
 <section class="card full">
   <h2>02 — LivePulse & Chat Intelligence</h2>
   <p class="sub">
@@ -358,7 +355,6 @@ footer{
   </div>
 </section>
 
-<!-- UPLOAD -->
 <section class="card">
   <h2>03 — Import Video</h2>
   <p class="sub">
@@ -373,8 +369,7 @@ footer{
 
   <div id="uploadYoutubeWrap" class="hidden">
     <label for="uploadYoutubeUrl">Matching YouTube URL</label>
-    <input id="uploadYoutubeUrl"
-      type="url"
+    <input id="uploadYoutubeUrl" type="url"
       placeholder="Paste the original YouTube URL">
   </div>
 
@@ -398,7 +393,6 @@ footer{
   <div id="uploadStatus" class="status">Choose a video to get started.</div>
 </section>
 
-<!-- PROCESSING -->
 <section class="card">
   <h2>04 — AI Processing</h2>
   <p class="sub">
@@ -419,7 +413,6 @@ footer{
   </div>
 </section>
 
-<!-- CLIPS -->
 <section class="card full">
   <h2>05 — Generated Clips</h2>
   <p class="sub">
@@ -431,7 +424,6 @@ footer{
   </div>
 </section>
 
-<!-- API HEALTH -->
 <section class="card full">
   <h2>06 — System Connection</h2>
   <p class="sub">Check whether the VYRO backend is reachable.</p>
@@ -452,11 +444,8 @@ footer{
 <script>
 "use strict";
 
-/* --------------------------------------------------
-   CONFIGURATION
--------------------------------------------------- */
-
-const API_BASE = "https://vyro-clips-1.onrender.com";
+/* CONFIGURATION */
+const API_BASE = "https://vyro-clips-youtube-test.onrender.com";
 
 let currentJob = null;
 let pollTimer = null;
@@ -474,22 +463,9 @@ let chatTotals = {
 
 let selectedVideoUrl = null;
 
-/* --------------------------------------------------
-   HELPERS
--------------------------------------------------- */
-
+/* HELPERS */
 function $(id) {
   return document.getElementById(id);
-}
-
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  })[char]);
 }
 
 function setStatus(id, message, type = "") {
@@ -500,7 +476,6 @@ function setStatus(id, message, type = "") {
 
 async function apiRequest(path, options = {}) {
   const response = await fetch(API_BASE + path, options);
-
   let data = {};
 
   try {
@@ -532,29 +507,20 @@ function validateYoutubeInput() {
   return url;
 }
 
-/* --------------------------------------------------
-   SOURCE MODE
--------------------------------------------------- */
-
+/* SOURCE MODE */
 function sourceChanged() {
   const mode = $("sourceMode").value;
-  $("uploadYoutubeWrap").classList.toggle(
-    "hidden",
-    mode !== "youtube"
-  );
+  $("uploadYoutubeWrap").classList.toggle("hidden", mode !== "youtube");
 }
 
-/* --------------------------------------------------
-   YOUTUBE INSPECTOR
--------------------------------------------------- */
-
+/* YOUTUBE INSPECTOR */
 async function inspectYoutube() {
   const button = $("inspectBtn");
 
   try {
     const url = validateYoutubeInput();
-
     button.disabled = true;
+
     setStatus("inspectStatus", "Inspecting YouTube video...", "info");
 
     const data = await apiRequest("/youtube/inspect", {
@@ -573,9 +539,7 @@ async function inspectYoutube() {
       "Video ID: " + (video.video_id || data.video_id || "");
 
     $("ytPublished").textContent =
-      video.published_at
-        ? "Published: " + video.published_at
-        : "";
+      video.published_at ? "Published: " + video.published_at : "";
 
     $("ytDuration").textContent =
       video.duration ? "Duration: " + video.duration : "";
@@ -599,10 +563,7 @@ async function inspectYoutube() {
   }
 }
 
-/* --------------------------------------------------
-   LIVE STATUS
--------------------------------------------------- */
-
+/* LIVE STATUS */
 async function checkLive() {
   const button = $("liveBtn");
 
@@ -621,9 +582,7 @@ async function checkLive() {
 
     let message = data.status || "Status unavailable";
 
-    if (data.title) {
-      message += "\n" + data.title;
-    }
+    if (data.title) message += "\n" + data.title;
 
     if (data.is_live) {
       message += "\nThis stream is currently live.";
@@ -643,19 +602,11 @@ async function checkLive() {
   }
 }
 
-/* --------------------------------------------------
-   CHAT ANALYSIS
--------------------------------------------------- */
-
+/* CHAT ANALYSIS */
 function clearChat() {
   chatSeen.clear();
 
-  chatTotals = {
-    messages: 0,
-    questions: 0,
-    reactions: 0
-  };
-
+  chatTotals = {messages: 0, questions: 0, reactions: 0};
   chatPageToken = null;
 
   $("messageCount").textContent = "0";
@@ -673,7 +624,6 @@ function renderChatAnalysis(analysis) {
   if (!analysis) return;
 
   $("topics").innerHTML = "";
-
   const topics = analysis.top_topics || [];
 
   if (!topics.length) {
@@ -696,21 +646,16 @@ function renderChatAnalysis(analysis) {
   }
 
   const messages = analysis.recent_messages || [];
-
-  if (messages.length) {
-    messages.forEach(item => addChatMessage(item));
-  }
+  messages.forEach(item => addChatMessage(item));
 }
 
 function addChatMessage(item) {
   const message = item.message || "";
   const author = item.author || "Viewer";
 
-  const key = author + "|" + message + "|" +
-    (item.published_at || "");
+  const key = author + "|" + message + "|" + (item.published_at || "");
 
   if (chatSeen.has(key)) return;
-
   chatSeen.add(key);
 
   const container = $("chatMessages");
@@ -757,12 +702,9 @@ async function fetchChatOnce() {
 
   try {
     const url = validateYoutubeInput();
-
     const body = {url};
 
-    if (chatPageToken) {
-      body.page_token = chatPageToken;
-    }
+    if (chatPageToken) body.page_token = chatPageToken;
 
     const data = await apiRequest("/youtube/live-chat", {
       method: "POST",
@@ -771,17 +713,12 @@ async function fetchChatOnce() {
     });
 
     if (!data.available) {
-      setStatus(
-        "chatStatus",
-        data.message || "Live chat is not available.",
-        "info"
-      );
+      setStatus("chatStatus", data.message || "Live chat is not available.", "info");
       stopChat();
       return;
     }
 
     updateChatStats(data.analysis);
-
     chatPageToken = data.next_page_token || null;
 
     if (!chatPageToken) {
@@ -794,11 +731,7 @@ async function fetchChatOnce() {
       return;
     }
 
-    setStatus(
-      "chatStatus",
-      "Live chat analysis is running.",
-      "good"
-    );
+    setStatus("chatStatus", "Live chat analysis is running.", "good");
 
   } catch (error) {
     setStatus("chatStatus", error.message, "bad");
@@ -829,9 +762,7 @@ function startChat() {
   fetchChatOnce();
 
   chatTimer = setInterval(() => {
-    if (chatRunning && chatPageToken) {
-      fetchChatOnce();
-    }
+    if (chatRunning && chatPageToken) fetchChatOnce();
   }, 6000);
 }
 
@@ -847,10 +778,7 @@ function stopChat() {
   $("chatStopBtn").disabled = true;
 }
 
-/* --------------------------------------------------
-   VIDEO PREVIEW
--------------------------------------------------- */
-
+/* VIDEO PREVIEW */
 $("videoFile").addEventListener("change", function() {
   const file = this.files && this.files[0];
 
@@ -859,30 +787,19 @@ $("videoFile").addEventListener("change", function() {
     return;
   }
 
-  if (selectedVideoUrl) {
-    URL.revokeObjectURL(selectedVideoUrl);
-  }
+  if (selectedVideoUrl) URL.revokeObjectURL(selectedVideoUrl);
 
   selectedVideoUrl = URL.createObjectURL(file);
-
   $("videoPreview").src = selectedVideoUrl;
+
   $("fileDetails").textContent =
-    file.name + " · " +
-    (file.size / (1024 * 1024)).toFixed(2) + " MB";
+    file.name + " · " + (file.size / (1024 * 1024)).toFixed(2) + " MB";
 
   $("previewWrap").classList.remove("hidden");
-
-  setStatus(
-    "uploadStatus",
-    "Video selected. Ready to upload.",
-    "good"
-  );
+  setStatus("uploadStatus", "Video selected. Ready to upload.", "good");
 });
 
-/* --------------------------------------------------
-   VIDEO UPLOAD
--------------------------------------------------- */
-
+/* VIDEO UPLOAD */
 async function uploadVideo() {
   const button = $("uploadBtn");
   const file = $("videoFile").files[0];
@@ -893,11 +810,7 @@ async function uploadVideo() {
   }
 
   if (file.size > 250 * 1024 * 1024) {
-    setStatus(
-      "uploadStatus",
-      "This video exceeds the 250 MB limit.",
-      "bad"
-    );
+    setStatus("uploadStatus", "This video exceeds the 250 MB limit.", "bad");
     return;
   }
 
@@ -905,16 +818,11 @@ async function uploadVideo() {
   const youtubeUrl = $("uploadYoutubeUrl").value.trim();
 
   if (sourceMode === "youtube" && !youtubeUrl) {
-    setStatus(
-      "uploadStatus",
-      "Please enter the matching YouTube URL.",
-      "bad"
-    );
+    setStatus("uploadStatus", "Please enter the matching YouTube URL.", "bad");
     return;
   }
 
   const form = new FormData();
-
   form.append("video", file);
   form.append("source_mode", sourceMode);
 
@@ -923,12 +831,7 @@ async function uploadVideo() {
   }
 
   button.disabled = true;
-
-  setStatus(
-    "uploadStatus",
-    "Uploading video. Please wait...",
-    "info"
-  );
+  setStatus("uploadStatus", "Uploading video. Please wait...", "info");
 
   try {
     const data = await apiRequest("/upload", {
@@ -944,15 +847,10 @@ async function uploadVideo() {
       "good"
     );
 
-    setStatus(
-      "jobStatus",
-      "Job queued. Waiting for processing...",
-      "info"
-    );
+    setStatus("jobStatus", "Job queued. Waiting for processing...", "info");
 
     $("progressBar").style.width = "0%";
     $("progressText").textContent = "0%";
-
     $("clips").innerHTML =
       '<div class="small">VYRO is preparing your clips...</div>';
 
@@ -965,17 +863,11 @@ async function uploadVideo() {
   }
 }
 
-/* --------------------------------------------------
-   JOB STATUS
--------------------------------------------------- */
-
+/* JOB STATUS */
 function startJobPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-  }
+  if (pollTimer) clearInterval(pollTimer);
 
   pollJob();
-
   pollTimer = setInterval(pollJob, 4000);
 }
 
@@ -1001,9 +893,7 @@ async function pollJob() {
       data.status === "failed" ? "bad" : "info"
     );
 
-    if (data.clips && data.clips.length) {
-      renderClips(data.clips);
-    }
+    if (data.clips && data.clips.length) renderClips(data.clips);
 
     if (data.status === "completed") {
       setStatus(
@@ -1017,11 +907,7 @@ async function pollJob() {
     }
 
     if (data.status === "failed") {
-      setStatus(
-        "jobStatus",
-        data.error || "Video processing failed.",
-        "bad"
-      );
+      setStatus("jobStatus", data.error || "Video processing failed.", "bad");
 
       clearInterval(pollTimer);
       pollTimer = null;
@@ -1032,10 +918,7 @@ async function pollJob() {
   }
 }
 
-/* --------------------------------------------------
-   CLIP RESULTS
--------------------------------------------------- */
-
+/* CLIP RESULTS */
 function renderClips(clips) {
   const container = $("clips");
   container.innerHTML = "";
@@ -1059,8 +942,7 @@ function renderClips(clips) {
     time.textContent =
       "Start: " + Number(clip.start || 0).toFixed(1) +
       "s · End: " + Number(clip.end || 0).toFixed(1) +
-      "s · Duration: " +
-      Number(clip.duration || 0).toFixed(1) + "s";
+      "s · Duration: " + Number(clip.duration || 0).toFixed(1) + "s";
 
     const score = document.createElement("span");
     score.textContent = "Highlight score: " + (clip.score ?? "N/A");
@@ -1068,7 +950,6 @@ function renderClips(clips) {
     details.append(title, time, score);
 
     const link = document.createElement("a");
-
     const path = clip.download_url || clip.url ||
       (clip.filename ? "/clips/" + clip.filename : "");
 
@@ -1088,10 +969,7 @@ function renderClips(clips) {
   });
 }
 
-/* --------------------------------------------------
-   BACKEND HEALTH
--------------------------------------------------- */
-
+/* BACKEND HEALTH */
 async function checkHealth() {
   setStatus("healthStatus", "Checking backend connection...", "info");
 
@@ -1114,18 +992,13 @@ async function checkHealth() {
   }
 }
 
-/* --------------------------------------------------
-   INITIALISE
--------------------------------------------------- */
-
+/* INITIALISE */
 sourceChanged();
 
 window.addEventListener("beforeunload", () => {
   stopChat();
 
-  if (pollTimer) {
-    clearInterval(pollTimer);
-  }
+  if (pollTimer) clearInterval(pollTimer);
 
   if (selectedVideoUrl) {
     URL.revokeObjectURL(selectedVideoUrl);
