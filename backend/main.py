@@ -431,7 +431,7 @@ def analyse_live_chat_messages(items, actual_start_time=None):
 
         is_reaction = bool(
             re.search(
-                r"😂|🤣|😭|🔥|❤️|😍|😮|😱|👏|💀|🎉|💯",
+                r"!|😂|🤣|😭|🔥|❤️|😍|😮|😱|👏|💀|🎉|💯",
                 message_text
             )
         )
@@ -804,12 +804,7 @@ FILLER_WORDS = ["um", "uh", "erm", "basically", "literally"]
 
 
 def count_phrases(text, phrases):
-    """Count phrase matches without matching inside unrelated words."""
-    total = 0
-    for phrase in phrases:
-        pattern = r"(?<!\w)" + re.escape(phrase) + r"(?!\w)"
-        total += len(re.findall(pattern, text, flags=re.IGNORECASE))
-    return total
+    return sum(text.count(phrase) for phrase in phrases)
 
 
 def score_highlight(transcript, relevant, window_duration):
@@ -939,26 +934,6 @@ def build_candidates(speech, duration):
     return candidates
 
 
-def build_fallback_candidates(duration):
-    """Create at most MAX_CLIPS segments that span the full video."""
-    if duration <= 0:
-        return []
-    count = min(MAX_CLIPS, max(1, int(duration // 30) + (duration % 30 > 0)))
-    segment_length = duration / count
-    candidates = []
-    for index in range(count):
-        start = index * segment_length
-        end = duration if index == count - 1 else (index + 1) * segment_length
-        if end > start:
-            candidates.append({
-                "start": start,
-                "end": end,
-                "score": 1,
-                "transcript": ""
-            })
-    return candidates
-
-
 def select_best_candidates(candidates):
     ranked = sorted(
         candidates,
@@ -991,6 +966,13 @@ def select_best_candidates(candidates):
             overlap_ratio = overlap / shorter if shorter > 0 else 0
 
             if overlap_ratio > 0.35:
+                overlaps = True
+                break
+
+            if (
+                candidate["start"] < existing["end"] + 2
+                and candidate["end"] > existing["start"] - 2
+            ):
                 overlaps = True
                 break
 
@@ -1107,8 +1089,12 @@ def analyse_video(job_id, video_path):
                 logger.exception("Scene detection failed for %s", job_id)
 
         if not candidates:
-            # No usable speech or scenes: cover the full video in up to five parts.
-            candidates = build_fallback_candidates(duration)
+            candidates.append({
+                "start": 0,
+                "end": min(duration, 30),
+                "score": 1,
+                "transcript": ""
+            })
 
         selected = select_best_candidates(candidates)
 
@@ -1410,4 +1396,3 @@ def download_clip(filename: str):
         media_type="video/mp4",
         filename=filename
     )
-
